@@ -8,22 +8,20 @@ from sklearn.model_selection import train_test_split
 # Charger les données
 df = pd.read_csv("euromillions.csv")
 
-# Séparer les numéros principaux et les numéros étoile
-X_main = df.iloc[:, :5]
-X_star = df.iloc[:, 5:7]
+# Extraire les numéros principaux et les numéros étoile de chaque tirage
+X = df.iloc[:, 1:8].values
 
-# One-hot encode les numéros principaux
-X_main = pd.get_dummies(X_main, prefix="main")
-
-# Concaténer les numéros principaux et les numéros étoile
-X = pd.concat([X_main, X_star], axis=1)
+# Extraire les numéros gagnants pour la prédiction
+y = df.iloc[:, 8:10].values
 
 # Diviser les données en ensembles d'entraînement et de test
-X_train, X_test = train_test_split(X, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Normaliser les données
-X_train = (X_train - X_train.mean()) / X_train.std()
-X_test = (X_test - X_test.mean()) / X_test.std()
+X_train = X_train / 50.0
+X_test = X_test / 50.0
+y_train = y_train / 12.0
+y_test = y_test / 12.0
 
 # Convertir les données en tableaux numpy
 X_train = np.array(X_train)
