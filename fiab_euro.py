@@ -1,45 +1,49 @@
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping
 
-# Lecture du fichier csv
-data = pd.read_csv("euro_millions.csv")
+# Charger les données depuis le fichier csv
+df = pd.read_csv('euromillions.csv', sep=';', header=None)
 
-# Séparation des numéros et des étoiles
-numbers = data.iloc[:, :7]
-stars = data.iloc[:, 7:]
+# Sélectionner les 7 colonnes pertinentes pour les tirages
+df = df.iloc[:, :7]
 
-# Conversion des numéros et des étoiles en entiers
-numbers = numbers.applymap(lambda x: int(x.split(';')[0]))
-stars = stars.applymap(int)
+# Diviser les données en entrées (les 5 premières colonnes) et en sortie (la dernière colonne)
+X = df.iloc[:, :5].values
+y = df.iloc[:, 6].values
 
-# Concaténation des numéros et des étoiles
-data_processed = pd.concat([numbers, stars], axis=1)
+# Diviser les données en ensembles de train/test
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Conversion des données en listes
-X = data_processed.values.tolist()
-y = data_processed.values.tolist()
+# Normaliser les données
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
 
-# Séparation des données d'entraînement et de test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1)
-
-# Définition du modèle
+# Définir le modèle
 model = Sequential()
-model.add(Dense(50, input_dim=14, activation='relu'))
-model.add(Dense(25, activation='relu'))
-model.add(Dense(7, activation='linear'))
+model.add(Dense(64, activation='relu', input_dim=X_train.shape[1]))
+model.add(Dropout(0.5))
+model.add(Dense(32, activation='relu'))
+model.add(Dropout(0.5))
+model.add(Dense(1, activation='linear'))
 
-# Compilation du modèle
-model.compile(loss='mean_squared_error', optimizer='adam')
+# Compiler le modèle
+model.compile(optimizer='adam', loss='mse')
 
-# Définition du callback early stopping
-early_stopping = EarlyStopping(monitor='val_loss', patience=5)
+# Définir l'early stopping
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
-# Entraînement du modèle
+# Entraîner le modèle
 model.fit(X_train, y_train, validation_split=0.2, epochs=100, callbacks=[early_stopping])
 
-# Évaluation du modèle
-loss = model.evaluate(X_test, y_test)
-print(f"Loss : {loss}")
+# Prédire les résultats sur les données de test
+predictions = model.predict(X_test)
+
+# Evaluer le modèle sur les données de test
+score = model.evaluate(X_test, y_test)
+print(f"Score (MSE) : {score:.4f}")
