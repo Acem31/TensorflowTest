@@ -7,16 +7,16 @@ from tensorflow.keras.layers import Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping
 
 # Importer les données
-df = pd.read_csv('euromillions.csv')
+df = pd.read_csv('euromillions.csv', header=None)
 
 # Supprimer les colonnes inutiles
-# df = df.drop(['id', 'date', 'star1', 'star2'], axis=1)
+df = df.iloc[:, 0:7]
 
 # Convertir les données en tableau numpy
 data = df.values
 
 # Séparer les données en entrée et en sortie
-X = data[:, :-1]
+X = data[:, :2]
 y = data[:, -1]
 
 # Diviser les données en ensembles d'entraînement et de test
