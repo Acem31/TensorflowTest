@@ -4,11 +4,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 
 # Charger les données à partir d'un fichier CSV
-data = pd.read_csv("euromillions.csv")
+data = pd.read_csv("euromillions.csv", header=None, delimiter=";")
+
+# Renommer les colonnes
+data.columns = ["num1", "num2", "num3", "num4", "num5", "etoile1", "etoile2"]
 
 # Diviser les données en ensemble d'entraînement et ensemble de test
-X = data.drop("numeros_gagnants", axis=1)  # Les caractéristiques sont toutes sauf le résultat final
-y = data["numeros_gagnants"]  # La variable cible est le résultat final
+X = data.drop(["num1", "num2", "num3", "num4", "num5"], axis=1)  # Les caractéristiques sont les deux numéros étoiles
+y = data[["num1", "num2", "num3", "num4", "num5"]]  # La variable cible sont les cinq numéros principaux
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
 # Créer un modèle d'apprentissage automatique
@@ -22,6 +25,6 @@ score = model.score(X_test, y_test)
 print("Score de précision du modèle :", score)
 
 # Prédire les résultats pour un nouveau jeu de données
-nouveaux_resultats = [[12, 29, 33, 37, 47], [5, 10]]  # Exemple de nouveaux résultats
+nouveaux_resultats = [[7, 9], [2, 5]]  # Exemple de nouveaux résultats pour les numéros étoiles
 prediction = model.predict(nouveaux_resultats)
 print("Les numéros gagnants prédits sont :", prediction)
