@@ -27,8 +27,8 @@ model_etoiles = RandomForestRegressor(n_estimators=100, random_state=42)
 model_etoiles.fit(y_train, X_train)
 
 # Prédire les numéros étoile pour la dernière ligne de données
-prediction_etoiles = model_etoiles.predict(derniere_ligne_principaux)[0]
-print("Les numéros étoile prédits sont :", round(prediction_etoiles))
+prediction_etoiles = model_etoiles.predict(derniere_ligne_principaux)
+print("Les numéros étoile prédits sont :", prediction_etoiles)
 
 # Créer un modèle d'apprentissage automatique pour la prédiction des numéros principaux
 model_principaux = RandomForestRegressor(n_estimators=100, random_state=42)
@@ -37,5 +37,5 @@ model_principaux = RandomForestRegressor(n_estimators=100, random_state=42)
 model_principaux.fit(X_train, y_train)
 
 # Prédire les numéros principaux pour la dernière ligne de données
-prediction_principaux = model_principaux.predict(derniere_ligne_etoiles)[0]
-print("Les numéros principaux prédits sont :", [int(round(num)) for num in prediction_principaux])
+prediction_principaux = model_principaux.predict(derniere_ligne_etoiles)
+print("Les numéros principaux prédits sont :", prediction_principaux)
