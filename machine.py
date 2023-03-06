@@ -39,3 +39,8 @@ model_principaux.fit(X_train, y_train)
 # Prédire les numéros principaux pour la dernière ligne de données
 prediction_principaux = model_principaux.predict(derniere_ligne_etoiles)
 print("Les numéros principaux prédits sont :", prediction_principaux)
+
+score_etoiles = model_etoiles.score(y_test, X_test)
+score_principaux = model_principaux.score(X_test, y_test)
+print("Score pour la prédiction des numéros étoile :", score_etoiles)
+print("Score pour la prédiction des numéros principaux :", score_principaux)
