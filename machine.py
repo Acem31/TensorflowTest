@@ -9,31 +9,33 @@ data = pd.read_csv("euromillions.csv", header=None, delimiter=";")
 # Renommer les colonnes
 data.columns = ["num1", "num2", "num3", "num4", "num5", "etoile1", "etoile2"]
 
+# Sélectionner les numéros principaux de la dernière ligne pour la prédiction des numéros étoile
+derniere_ligne_principaux = data[["num1", "num2", "num3", "num4", "num5"]].iloc[-1:].values
+
+# Sélectionner les numéros étoile de la dernière ligne pour la prédiction des numéros principaux
+derniere_ligne_etoiles = data[["etoile1", "etoile2"]].iloc[-1:].values
+
 # Diviser les données en ensemble d'entraînement et ensemble de test
 X = data.drop(["num1", "num2", "num3", "num4", "num5"], axis=1)  # Les caractéristiques sont les deux numéros étoiles
 y = data[["num1", "num2", "num3", "num4", "num5"]]  # La variable cible sont les cinq numéros principaux
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-# Créer un modèle d'apprentissage automatique avec les noms de colonnes spécifiés
-model = RandomForestRegressor(n_estimators=100, random_state=42)
-model.fit(X_train, y_train, feature_names=["etoile1", "etoile2"])
+# Créer un modèle d'apprentissage automatique pour la prédiction des numéros étoile
+model_etoiles = RandomForestRegressor(n_estimators=100, random_state=42)
 
-# Évaluer les performances du modèle sur l'ensemble de test
-score = model.score(X_test, y_test)
-print("Score de précision du modèle :", score)
+# Entraîner le modèle sur l'ensemble d'entraînement
+model_etoiles.fit(y_train, X_train)
 
-# Prédire les résultats pour un nouveau jeu de données
-derniere_ligne = data.tail(1)
-nouveaux_resultats = [[derniere_ligne["etoile1"].values[0], derniere_ligne["etoile2"].values[0]],
-                      [derniere_ligne["num1"].values[0], derniere_ligne["num2"].values[0], 
-                       derniere_ligne["num3"].values[0], derniere_ligne["num4"].values[0], 
-                       derniere_ligne["num5"].values[0]]]
-prediction_etoiles = model.predict(nouveaux_resultats[0])
-prediction_numeros = model.predict(nouveaux_resultats[1])
+# Prédire les numéros étoile pour la dernière ligne de données
+prediction_etoiles = model_etoiles.predict(derniere_ligne_principaux)[0]
+print("Les numéros étoile prédits sont :", round(prediction_etoiles))
 
-# Arrondir les résultats
-prediction_etoiles_arrondis = [round(x) for x in prediction_etoiles]
-prediction_numeros_arrondis = [round(x) for x in prediction_numeros]
+# Créer un modèle d'apprentissage automatique pour la prédiction des numéros principaux
+model_principaux = RandomForestRegressor(n_estimators=100, random_state=42)
 
-print("Les numéros étoiles prédits sont :", prediction_etoiles_arrondis)
-print("Les numéros gagnants prédits sont :", prediction_numeros_arrondis)
+# Entraîner le modèle sur l'ensemble d'entraînement
+model_principaux.fit(X_train, y_train)
+
+# Prédire les numéros principaux pour la dernière ligne de données
+prediction_principaux = model_principaux.predict(derniere_ligne_etoiles)[0]
+print("Les numéros principaux prédits sont :", [int(round(num)) for num in prediction_principaux])
