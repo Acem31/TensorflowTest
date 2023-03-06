@@ -15,8 +15,14 @@ df = df.iloc[:, 0:7]
 # Convertir les données en tableau numpy
 data = df.values
 
-# Séparer les données en entrée et en sortie
-X = data[:, :2]
+# Créer un tableau pour les entrées
+X = np.empty((len(data), 7), dtype=int)
+
+# Convertir les données en tableau d'entiers
+for i, row in enumerate(data):
+    X[i] = [int(num) for num in row[0].split(';')]
+
+# Créer un tableau pour les sorties
 y = data[:, -1]
 
 # Diviser les données en ensembles d'entraînement et de test
@@ -54,5 +60,5 @@ print("MSE :", score)
 # Prédire le résultat pour un tirage spécifique (ici le 100ème)
 input_data = X[100].reshape(1, -1)
 output_data = model.predict(input_data)
-print("Prédiction pour le tirage numéro 100 :", output_data[0, 0])
+print("Prédiction pour le tirage numéro 100 :", ';'.join([str(num) for num in input_data[0]]))
 print("Résultat réel :", y[100])
