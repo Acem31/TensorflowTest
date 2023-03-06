@@ -9,22 +9,33 @@ data = pd.read_csv("euromillions.csv", header=None, delimiter=";")
 # Renommer les colonnes
 data.columns = ["num1", "num2", "num3", "num4", "num5", "etoile1", "etoile2"]
 
+# Sélectionner les numéros principaux de la dernière ligne pour la prédiction des numéros étoile
+derniere_ligne_principaux = data[["num1", "num2", "num3", "num4", "num5"]].iloc[-1:].values
+
+# Sélectionner les numéros étoile de la dernière ligne pour la prédiction des numéros principaux
+derniere_ligne_etoiles = data[["etoile1", "etoile2"]].iloc[-1:].values
+
 # Diviser les données en ensemble d'entraînement et ensemble de test
 X = data.drop(["num1", "num2", "num3", "num4", "num5"], axis=1)  # Les caractéristiques sont les deux numéros étoiles
 y = data[["num1", "num2", "num3", "num4", "num5"]]  # La variable cible sont les cinq numéros principaux
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-# Créer un modèle d'apprentissage automatique
-model = RandomForestRegressor(n_estimators=100, random_state=42)
+# Créer un modèle d'apprentissage automatique pour la prédiction des numéros étoile
+model_etoiles = RandomForestRegressor(n_estimators=100, random_state=42)
 
 # Entraîner le modèle sur l'ensemble d'entraînement
-model.fit(X_train, y_train)
+model_etoiles.fit(y_train, X_train)
 
-# Évaluer les performances du modèle sur l'ensemble de test
-score = model.score(X_test, y_test)
-print("Score de précision du modèle :", score)
+# Prédire les numéros étoile pour la dernière ligne de données
+prediction_etoiles = model_etoiles.predict(derniere_ligne_principaux)
+print("Les numéros étoile prédits sont :", prediction_etoiles)
 
-# Prédire les résultats pour un nouveau jeu de données
-nouveaux_resultats = [[7, 9], [2, 5]]  # Exemple de nouveaux résultats pour les numéros étoiles
-prediction = model.predict(nouveaux_resultats)
-print("Les numéros gagnants prédits sont :", prediction)
+# Créer un modèle d'apprentissage automatique pour la prédiction des numéros principaux
+model_principaux = RandomForestRegressor(n_estimators=100, random_state=42)
+
+# Entraîner le modèle sur l'ensemble d'entraînement
+model_principaux.fit(X_train, y_train)
+
+# Prédire les numéros principaux pour la dernière ligne de données
+prediction_principaux = model_principaux.predict(derniere_ligne_etoiles)
+print("Les numéros principaux prédits sont :", prediction_principaux)
