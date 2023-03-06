@@ -10,7 +10,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 df = pd.read_csv('euromillions.csv')
 
 # Supprimer les colonnes inutiles
-# df = df.drop(['id', 'date'], axis=1)
+df = df.drop(['id', 'date', 'star1', 'star2'], axis=1)
 
 # Convertir les données en tableau numpy
 data = df.values
