@@ -12,7 +12,7 @@ numbers = data.iloc[:, :7]
 stars = data.iloc[:, 7:]
 
 # Conversion des numéros et des étoiles en entiers
-numbers = numbers.applymap(int)
+numbers = numbers.applymap(lambda x: int(x.split(';')[0]))
 stars = stars.applymap(int)
 
 # Concaténation des numéros et des étoiles
