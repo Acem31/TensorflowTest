@@ -12,23 +12,11 @@ data.columns = ["num1", "num2", "num3", "num4", "num5", "etoile1", "etoile2"]
 # Diviser les données en ensemble d'entraînement et ensemble de test
 X = data.drop(["num1", "num2", "num3", "num4", "num5"], axis=1)  # Les caractéristiques sont les deux numéros étoiles
 y = data[["num1", "num2", "num3", "num4", "num5"]]  # La variable cible sont les cinq numéros principaux
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-# Spécifier les noms de colonnes pour les ensembles d'entraînement et de test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, 
-                                                    random_state=42, 
-                                                    stratify=None,
-                                                    shuffle=True,
-                                                    )
-X_train.columns = ["etoile1", "etoile2"]
-y_train.columns = ["num1", "num2", "num3", "num4", "num5"]
-X_test.columns = ["etoile1", "etoile2"]
-y_test.columns = ["num1", "num2", "num3", "num4", "num5"]
-
-# Créer un modèle d'apprentissage automatique
+# Créer un modèle d'apprentissage automatique avec les noms de colonnes spécifiés
 model = RandomForestRegressor(n_estimators=100, random_state=42)
-
-# Entraîner le modèle sur l'ensemble d'entraînement
-model.fit(X_train, y_train)
+model.fit(X_train, y_train, feature_names=["etoile1", "etoile2"])
 
 # Évaluer les performances du modèle sur l'ensemble de test
 score = model.score(X_test, y_test)
@@ -40,7 +28,12 @@ nouveaux_resultats = [[derniere_ligne["etoile1"].values[0], derniere_ligne["etoi
                       [derniere_ligne["num1"].values[0], derniere_ligne["num2"].values[0], 
                        derniere_ligne["num3"].values[0], derniere_ligne["num4"].values[0], 
                        derniere_ligne["num5"].values[0]]]
-prediction_etoiles = model.predict([nouveaux_resultats[0]])
-prediction_numeros = model.predict([nouveaux_resultats[1]])
-print("Les numéros étoiles prédits sont :", prediction_etoiles)
-print("Les numéros gagnants prédits sont :", prediction_numeros)
+prediction_etoiles = model.predict(nouveaux_resultats[0])
+prediction_numeros = model.predict(nouveaux_resultats[1])
+
+# Arrondir les résultats
+prediction_etoiles_arrondis = [round(x) for x in prediction_etoiles]
+prediction_numeros_arrondis = [round(x) for x in prediction_numeros]
+
+print("Les numéros étoiles prédits sont :", prediction_etoiles_arrondis)
+print("Les numéros gagnants prédits sont :", prediction_numeros_arrondis)
