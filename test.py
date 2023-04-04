@@ -9,7 +9,7 @@ from tensorflow.keras import layers
 data = pd.read_csv("euromillions.csv")
 
 # Trier les numéros
-data.iloc[:, :5] = data.iloc[:, :5].apply(lambda x: sorted(map(int, x.split(';'))), axis=1)
+data.iloc[:, :5] = data.iloc[:, :5].apply(lambda x: sorted(map(int, x.split(';'))), axis=1).apply(pd.Series)
 
 # Récupérer le dernier tirage
 last_draw = data.iloc[-1, :6]
