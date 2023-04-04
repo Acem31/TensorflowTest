@@ -9,21 +9,21 @@ from tensorflow.keras import layers
 data = pd.read_csv("euromillions.csv")
 
 # Trier les numéros
-data.iloc[:, :5] = data.iloc[:, :5].apply(sorted, axis=1, result_type='broadcast')
+data.iloc[:, :5] = data.iloc[:, :5].apply(lambda x: sorted(map(int, x.split(';'))), axis=1)
 
 # Récupérer le dernier tirage
 last_draw = data.iloc[-1, :6]
 
 # Sélectionner les données d'entraînement en excluant le dernier tirage
-X_train = data.iloc[:-1, :6]
-y_train = data.iloc[:-1, 6:]
+X_train = data.iloc[:-1, :6].apply(lambda x: list(map(int, x.str.split(';').str[0:5].tolist())), axis=1)
+y_train = data.iloc[:-1, 6:].apply(lambda x: list(map(int, x.str.split(';').str[0:2].tolist())), axis=1)
 
 # Normaliser les données
 scaler = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 
 # Ajouter le dernier tirage aux données de test
-X_test = scaler.transform(last_draw.values.reshape(1, -1))
+X_test = scaler.transform([last_draw.str.split(';').str[0:5].apply(lambda x: list(map(int, x))).tolist()])
 
 # Créer un réseau de neurones
 model = keras.Sequential([
