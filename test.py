@@ -8,9 +8,6 @@ from tensorflow.keras import layers
 # Charger les données
 data = pd.read_csv("euromillions.csv")
 
-# Renommer les colonnes
-data.columns = ["num1", "num2", "num3", "num4", "num5", "etoile1", "etoile2"]
-
 # Trier les numéros
 data.iloc[:, :5] = data.iloc[:, :5].apply(sorted, axis=1)
 
