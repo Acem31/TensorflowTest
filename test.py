@@ -26,9 +26,15 @@ model.fit(x_train, y_train, epochs=100)
 
 # Prédiction des numéros gagnants pour le prochain tirage
 prochain_tirage = np.array([[-1, -1, -1, -1, -1]], dtype=int)  # valeurs inconnues
-prediction = model.predict(prochain_tirage)
+prediction = model.predict(prochain_tirage)[0]
+
+# Empêcher deux numéros similaires d'être prédits
+derniers_numeros = np.array(numeros[-1], dtype=int)
+for i in range(5):
+    while np.abs(prediction[i] - derniers_numeros[i]) <= 1:
+        prediction[i] = np.random.randint(1, 51)
 
 # Affichage de la prédiction et des numéros réels pour le dernier tirage
 dernier_tirage = np.array([numeros[-1]], dtype=int)
-print("Prédiction: ", np.around(prediction[0]).astype(int))
+print("Prédiction: ", np.sort(np.around(prediction).astype(int)))
 print("Dernier tirage: ", dernier_tirage[0])
