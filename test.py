@@ -1,32 +1,27 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
 
-# 1. Charger les données
-data = pd.read_csv("euromillions.csv", header=None, delimiter=";")
-X = data.iloc[:, :5].values # numéros principaux
-y = data.iloc[:, 5:].values # numéros étoiles
-X_test = X[-1] # dernière ligne pour les prédictions
-X = X[:-1]
-y = y[:-1]
+# Import des données de l'historique des tirages
+df = pd.read_csv("euromillions.csv")
 
-# 2. Préparer les données
-X_train, X_val, y_train, y_val = train_test_split(X, y[:, 0], test_size=0.2, random_state=42)
-# Normalisation des données si nécessaire
+# Préparation des données pour l'entraînement du modèle
+X = df.iloc[:, :-5].values  # toutes les colonnes à l'exception des 5 dernières colonnes contenant les numéros
+y = df.iloc[:, -5:].values  # les 5 dernières colonnes contenant les numéros
 
-# 3. Créer le modèle
-model = LogisticRegression()
+# Division des données en ensembles d'apprentissage et de test
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 4. Entraîner le modèle
+# Entraînement du modèle de Régression Logistique Multinomiale
+model = LogisticRegression(multi_class='multinomial', solver='lbfgs')
 model.fit(X_train, y_train)
 
-# 5. Évaluer le modèle
-y_pred = model.predict(X_val)
-accuracy = accuracy_score(y_val, y_pred)
-print("Accuracy:", accuracy)
+# Évaluation de la précision du modèle
+accuracy = model.score(X_test, y_test)
+print(f"Accuracy: {accuracy}")
 
-# 6. Prédire les résultats
-y_test_pred = model.predict([X_test])
-print("Prédiction:", y_test_pred[0])
-print("Résultat réel:", data.iloc[-1, :5].values)
+# Prédiction d'une liste de 5 numéros pour le prochain tirage
+last_draw = [3, 12, 21, 26, 34, 1, 11]
+last_draw_features = last_draw[:-1]  # Les 5 premiers éléments sont les numéros principaux
+next_number_predictions = model.predict([last_draw_features])
+print(f"Prédiction: {next_number_predictions[0]}")
