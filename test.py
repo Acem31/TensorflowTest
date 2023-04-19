@@ -20,6 +20,8 @@ model = LogisticRegression()
 
 # Convertir y_train
 y_train = y_train.flatten()
+print(len(X_train))
+print(len(y_train))
 
 # 4. Entraîner le modèle
 model.fit(X_train, y_train)
