@@ -17,7 +17,7 @@ x_train = np.array(numeros[:-1], dtype=int)
 y_train = np.array(numeros[1:], dtype=int)
 
 # Fonction de création du modèle
-def create_model(neurons=[16], layers=1, activation='relu', optimizer='adam', dropout=0.0):
+def create_model(neurons=[16], layers=1, activation='relu', optimizer='adam', dropout=0.0, batch_size=32):
     model = keras.Sequential()
     model.add(keras.layers.Reshape((5, 1), input_shape=(5,)))
     for i in range(layers):
