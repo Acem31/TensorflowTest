@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 data = pd.read_csv("euromillions.csv", header=None, delimiter=";")
 X = data.iloc[:, :5].values # numéros principaux
 y = data.iloc[:, 5:].values.ravel() # convertit y en un tableau à une dimension ; numéros étoiles
-X_test = X[-1] # dernière ligne pour les prédictions
+X_test = data.iloc[-1, :5].values # dernière ligne pour les prédictions
 X = X[:-1]
 y = y[:-1]
 
