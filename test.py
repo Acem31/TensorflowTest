@@ -1,28 +1,34 @@
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
+import csv
+import numpy as np
+from tensorflow import keras
 
-# Charger les données
-data = pd.read_csv("euromillions.csv", header=None, usecols=[0, 1, 2, 3, 4])
+# Chargement des données
+numeros = []
+with open('euromillions.csv') as f:
+    reader = csv.reader(f, delimiter=';')
+    for row in reader:
+        numeros.append(row[:5])
 
-# Séparer les données en entrée et en sortie
-X = data.drop(columns=['n1', 'n2', 'n3', 'n4', 'n5'])
-y = data[['n1', 'n2', 'n3', 'n4', 'n5']]
+# Préparation des données pour l'entraînement
+x_train = np.array(numeros[:-1], dtype=int)
+y_train = np.array(numeros[1:], dtype=int)
 
-# Séparer les données en ensemble d'entraînement et ensemble de validation
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+# Création du réseau de neurones
+model = keras.Sequential([
+    keras.layers.Dense(16, activation='relu', input_shape=(5,)),
+    keras.layers.Dense(16, activation='relu'),
+    keras.layers.Dense(5)
+])
+model.compile(optimizer='adam', loss='mse')
 
-# Créer le modèle
-model = LogisticRegression(max_iter=10000)
+# Entraînement du réseau de neurones
+model.fit(x_train, y_train, epochs=100)
 
-# Entraîner le modèle
-model.fit(X_train, y_train)
+# Prédiction des numéros gagnants pour le prochain tirage
+prochain_tirage = np.array([[-1, -1, -1, -1, -1]], dtype=int)  # valeurs inconnues
+prediction = model.predict(prochain_tirage)
 
-# Évaluer la précision du modèle sur l'ensemble de validation
-accuracy = model.score(X_val, y_val)
-print(f'Accuracy: {accuracy}')
-
-# Prédire les 5 numéros de la prochaine combinaison
-next_draw = X.tail(1)
-next_numbers = model.predict(next_draw)
-print(f'Prédiction: {list(next_numbers[0])}')
+# Affichage de la prédiction et des numéros réels pour le dernier tirage
+dernier_tirage = np.array([numeros[-1]], dtype=int)
+print("Prédiction: ", np.around(prediction[0]).astype(int))
+print("Dernier tirage: ", dernier_tirage[0])
