@@ -18,9 +18,8 @@ X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_st
 # 3. Créer le modèle
 model = LogisticRegression()
 
-#Convertir y_train
-y_train = y_train.ravel()
-
+# Convertir y_train
+y_train = y_train.flatten()
 
 # 4. Entraîner le modèle
 model.fit(X_train, y_train)
