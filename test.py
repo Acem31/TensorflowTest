@@ -15,10 +15,18 @@ y_train = np.array(numeros[1:], dtype=int)
 
 # Création du réseau de neurones
 model = keras.Sequential([
-    keras.layers.Dense(16, activation='relu', input_shape=(5,)),
-    keras.layers.Dense(16, activation='relu'),
+    keras.layers.Reshape((5, 1), input_shape=(5,)),
+    keras.layers.Conv1D(32, kernel_size=3, activation='relu'),
+    keras.layers.Dropout(0.2),
+    keras.layers.Conv1D(64, kernel_size=3, activation='relu'),
+    keras.layers.Dropout(0.2),
+    keras.layers.Flatten(),
+    keras.layers.Dense(128, activation='relu'),
+    keras.layers.Dropout(0.5),
+    keras.layers.Dense(64, activation='relu'),
     keras.layers.Dense(5)
 ])
+
 model.compile(optimizer='adam', loss='mse')
 
 # Entraînement du réseau de neurones
