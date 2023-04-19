@@ -16,18 +16,26 @@ y_train = np.array(numeros[1:], dtype=int)
 # Création du réseau de neurones
 model = keras.Sequential([
     keras.layers.Reshape((5, 1), input_shape=(5,)),
-    keras.layers.Conv1D(32, kernel_size=3, activation='relu'),
-    keras.layers.Dropout(0.2),
-    keras.layers.Conv1D(64, kernel_size=3, activation='relu'),
-    keras.layers.Dropout(0.2),
-    keras.layers.Flatten(),
-    keras.layers.Dense(128, activation='relu'),
+    keras.layers.Conv1D(64, kernel_size=3, activation='relu', padding='same'),
+    keras.layers.BatchNormalization(),
+    keras.layers.Conv1D(64, kernel_size=3, activation='relu', padding='same'),
+    keras.layers.BatchNormalization(),
+    keras.layers.MaxPooling1D(pool_size=2),
+    keras.layers.Conv1D(128, kernel_size=3, activation='relu', padding='same'),
+    keras.layers.BatchNormalization(),
+    keras.layers.Conv1D(128, kernel_size=3, activation='relu', padding='same'),
+    keras.layers.BatchNormalization(),
+    keras.layers.GlobalAveragePooling1D(),
     keras.layers.Dropout(0.5),
     keras.layers.Dense(64, activation='relu'),
+    keras.layers.BatchNormalization(),
+    keras.layers.Dropout(0.5),
+    keras.layers.Dense(32, activation='relu'),
     keras.layers.Dense(5)
 ])
 
 model.compile(optimizer='adam', loss='mse')
+
 
 # Entraînement du réseau de neurones
 model.fit(x_train, y_train, epochs=100)
