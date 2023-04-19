@@ -3,7 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 
 # Charger les données
-data = pd.read_csv('euromillions.csv', usecols=[0,1,2,3,4])
+data = pd.read_csv("euromillions.csv", header=None, usecols=[0, 1, 2, 3, 4])
 
 # Séparer les données en entrée et en sortie
 X = data.drop(columns=['n1', 'n2', 'n3', 'n4', 'n5'])
