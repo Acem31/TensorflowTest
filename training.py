@@ -1,7 +1,8 @@
 import csv
 import numpy as np
 from tensorflow import keras
-from sklearn.model_selection import GridSearchCV, ParameterGrid
+from sklearn.model_selection import GridSearchCV
+from keras.wrappers.scikit_learn import KerasRegressor
 
 # Chargement des données
 numeros = []
@@ -26,6 +27,9 @@ def create_model(neurons=[16], layers=1, activation='relu', optimizer='adam', dr
     model.compile(optimizer=optimizer, loss='mse')
     return model
 
+# Création d'un objet KerasRegressor
+regressor = KerasRegressor(build_fn=create_model)
+
 # Définition des hyperparamètres à tester
 param_grid = {
     'neurons': [[16], [32], [64], [128], [256], [512], [16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
@@ -36,10 +40,9 @@ param_grid = {
 }
 
 # Utilisation de GridSearchCV pour tester toutes les combinaisons d'hyperparamètres
-grid_search = GridSearchCV(estimator=create_model(),
+grid_search = GridSearchCV(estimator=regressor,
                            param_grid=param_grid,
                            cv=5,
-                           scoring='neg_mean_squared_error',
                            n_jobs=-1)
 grid_search.fit(x_train, y_train)
 
