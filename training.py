@@ -39,6 +39,7 @@ param_grid = {
 grid_search = GridSearchCV(estimator=create_model(),
                            param_grid=param_grid,
                            cv=5,
+                           scoring='neg_mean_squared_error',
                            n_jobs=-1)
 grid_search.fit(x_train, y_train)
 
