@@ -1,9 +1,7 @@
 import csv
 import numpy as np
 from tensorflow import keras
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import ParameterGrid
+from sklearn.model_selection import GridSearchCV, ParameterGrid
 
 # Chargement des données
 numeros = []
@@ -16,16 +14,14 @@ with open('euromillions.csv') as f:
 x_train = np.array(numeros[:-1], dtype=int)
 y_train = np.array(numeros[1:], dtype=int)
 
-def create_model(neurons=[16], layers=1, activation='relu', optimizer='adam', dropout=0.0, batch_size=32, epochs=50):
+def create_model(neurons=[16], layers=1, activation='relu', optimizer='adam', dropout=0.0):
     model = keras.Sequential()
-    model.add(keras.layers.Reshape((5, 1), input_shape=(5,)))
-    if isinstance(neurons, int):
-        neurons = [neurons] * layers
     for i in range(layers):
-        model.add(keras.layers.Conv1D(neurons[i], kernel_size=3, activation=activation))
+        if i == 0:
+            model.add(keras.layers.Dense(neurons[i], input_dim=5, activation=activation))
+        else:
+            model.add(keras.layers.Dense(neurons[i], activation=activation))
         model.add(keras.layers.Dropout(dropout))
-    model.add(keras.layers.Flatten())
-    model.add(keras.layers.Dense(neurons[-1], activation=activation))
     model.add(keras.layers.Dense(5))
     model.compile(optimizer=optimizer, loss='mse')
     return model
@@ -37,14 +33,15 @@ param_grid = {
     'activation': ['relu', 'tanh', 'sigmoid', 'linear'],
     'optimizer': ['adam', 'sgd', 'rmsprop', 'adagrad'],
     'dropout': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
-    'batch_size': [16, 32, 64, 128],
-    'epochs': [50, 100, 150, 200]
 }
 
-param_list = list(ParameterGrid(param_grid))
+# Utilisation de GridSearchCV pour tester toutes les combinaisons d'hyperparamètres
+grid_search = GridSearchCV(estimator=create_model(),
+                           param_grid=param_grid,
+                           cv=5,
+                           n_jobs=-1)
+grid_search.fit(x_train, y_train)
 
-for params in param_list:
-    model = create_model(**params)
-    model.fit(x_train, y_train, batch_size=params['batch_size'], epochs=params['epochs'], verbose=0)
-    score = model.evaluate(x_train, y_train, verbose=0)
-    print(params, score)
+# Affichage des résultats
+print('Meilleurs hyperparamètres trouvés:', grid_search.best_params_)
+print('Score de la meilleure combinaison:', grid_search.best_score_)
