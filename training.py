@@ -18,11 +18,12 @@ y_train = np.array(numeros[1:], dtype=int)
 def create_model(neurons=[16], layers=1, activation='relu', optimizer='adam', dropout=0.0):
     model = tf.keras.Sequential()
     for i in range(layers):
-        if i == 0:
-            model.add(tf.keras.layers.Dense(neurons[i], input_dim=5, activation=activation))
-        else:
-            model.add(tf.keras.layers.Dense(neurons[i], activation=activation))
-        model.add(tf.keras.layers.Dropout(dropout))
+        if i < len(neurons):
+            if i == 0:
+                model.add(tf.keras.layers.Dense(neurons[i], input_dim=5, activation=activation))
+            else:
+                model.add(tf.keras.layers.Dense(neurons[i], activation=activation))
+            model.add(tf.keras.layers.Dropout(dropout))
     model.add(tf.keras.layers.Dense(5, activation='linear'))
     model.compile(optimizer=optimizer, loss='mse')
     return model
