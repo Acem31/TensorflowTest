@@ -34,7 +34,7 @@ regressor = KerasRegressor(build_fn=create_model)
 # Définition des hyperparamètres à tester
 param_grid = {
     'neurons': [[16], [32], [64], [128], [256], [512]],# [16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
-    'layers': [1, 2, 3, 4],
+    'layers': [2, 3, 4],#[1, 2, 3, 4],
     'activation': ['relu', 'tanh', 'sigmoid', 'linear'],
     'optimizer': ['adam', 'sgd', 'rmsprop', 'adagrad'],
     'dropout': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
