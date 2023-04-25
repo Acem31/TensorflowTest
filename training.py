@@ -15,7 +15,7 @@ with open('euromillions.csv') as f:
 x_train = np.array(numeros[:-1], dtype=int)
 y_train = np.array(numeros[1:], dtype=int)
 
-def create_model(neurons=[16], layers=1, activation='relu', optimizer='adam', dropout=0.0):
+def create_model(neurons=[16], layers=1, activation='relu', optimizer='adam', dropout=0.0, epochs=100):
     model = tf.keras.Sequential()
     for i in range(layers):
         if i < len(neurons):
@@ -34,10 +34,11 @@ regressor = KerasRegressor(build_fn=create_model)
 # Définition des hyperparamètres à tester
 param_grid = {
     'neurons': [[16], [32], [64], [128], [256], [512]],# [16, 16], [32, 32], [64, 64], [128, 128], [256, 256], [512, 512]],
-    'layers': [2, 3, 4],#[1, 2, 3, 4],
+    'layers': [1],#[1, 2, 3, 4],
     'activation': ['relu', 'tanh', 'sigmoid', 'linear'],
     'optimizer': ['adam', 'sgd', 'rmsprop', 'adagrad'],
     'dropout': [0.0, 0.1, 0.2, 0.3, 0.4, 0.5],
+    'epochs': [50, 100, 200, 400]
 }
 
 # Utilisation de GridSearchCV pour tester toutes les combinaisons d'hyperparamètres
