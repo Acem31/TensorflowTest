@@ -27,8 +27,12 @@ predictions = []
 
 # Entraînement et prédiction pour chaque chiffre de la séquence
 for i in range(5):
+    # Suppression des lignes contenant des valeurs NaN dans les données d'entraînement
+    X_train_cleaned = X_train.dropna()
+    y_train_cleaned = y_train[X_train.dropna().index]
+    
     model = RandomForestRegressor(random_state=42)
-    model.fit(X_train, y_train.str[i])
+    model.fit(X_train_cleaned, y_train_cleaned.str[i])
     y_pred = model.predict(X_test)
     predictions.append(y_pred)
 
