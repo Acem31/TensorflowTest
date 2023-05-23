@@ -9,6 +9,9 @@ data = pd.read_csv("euromillions.csv", sep=";", header=None)
 # Sélection des 5 premières colonnes
 data = data.iloc[:, :5]
 
+# Conversion de la colonne cible en chaînes de caractères
+data.iloc[:, 4] = data.iloc[:, 4].astype(str)
+
 # Séparation des fonctionnalités (X) et de la variable cible (y)
 X = data.iloc[:, :4]
 y = data.iloc[:, 4]
@@ -32,6 +35,7 @@ print("MSE (Mean Squared Error):", mse)
 
 # Prédiction avec le modèle optimisé
 new_data = pd.DataFrame([[16, 29, 32, 36], [7, 13, 39, 47]], columns=X.columns)
+new_data = new_data.astype(str)
 new_predictions = []
 
 # Prédiction pour chaque chiffre de la séquence
