@@ -4,7 +4,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 
 # Chargement des données depuis le fichier CSV
-data = pd.read_csv("euromillions.csv")
+data = pd.read_csv("euromillions.csv", sep=";", header=None)
 
 # Sélection des 5 premières colonnes
 data = data.iloc[:, :5]
@@ -26,6 +26,6 @@ mse = mean_squared_error(y_test, y_pred)
 print("MSE (Mean Squared Error):", mse)
 
 # Prédiction avec le modèle optimisé
-new_data = pd.DataFrame([[1, 2, 3, 4], [5, 6, 7, 8]], columns=X.columns)
+new_data = pd.DataFrame([[16, 29, 32, 36], [7, 13, 39, 47]], columns=X.columns)
 predictions = model.predict(new_data)
 print("Prédictions:", predictions)
