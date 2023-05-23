@@ -1,53 +1,28 @@
-import pandas as pd
+import csv
+import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error
+from sklearn.svm import SVR
 
-# Chargement des données depuis le fichier CSV
-data = pd.read_csv("euromillions.csv", sep=";", header=None)
+# Charger les données CSV
+data = []
+with open('euromillions.csv', 'r') as file:
+    csv_reader = csv.reader(file, delimiter=';')
+    for row in csv_reader:
+        series = [int(num) for num in row[:5]]
+        data.append(series)
 
-# Sélection des 5 premières colonnes
-data = data.iloc[:, :5]
+# Diviser les données en ensembles d'apprentissage et de test
+X = data[:-1]  # Séries d'apprentissage (toutes sauf la dernière)
+y = [series[0] for series in data[1:]]  # Numéro cible (premier numéro de chaque série)
 
-# Conversion de la colonne cible en chaînes de caractères
-data.iloc[:, 4] = data.iloc[:, 4].astype(str)
-
-# Suppression des lignes contenant des valeurs NaN
-data = data.dropna()
-
-# Séparation des fonctionnalités (X) et de la variable cible (y)
-X = data.iloc[:, :4]
-y = data.iloc[:, 4]
-
-# Division des données en ensembles d'entraînement et de test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Création d'une liste pour stocker les prédictions de chaque chiffre
-predictions = []
+# Entraîner le modèle SVM
+model = SVR()
+model.fit(X_train, y_train)
 
-# Entraînement et prédiction pour chaque chiffre de la séquence
-for i in range(5):
-    # Suppression des lignes contenant des valeurs NaN dans les données d'entraînement
-    X_train_cleaned = X_train.dropna()
-    y_train_cleaned = y_train[X_train.dropna().index]
-    
-    model = RandomForestRegressor(random_state=42)
-    model.fit(X_train_cleaned, y_train_cleaned.str[i])
-    y_pred = model.predict(X_test)
-    predictions.append(y_pred)
+# Prédire le prochain numéro
+next_series = data[-1]
+next_number = model.predict([next_series])[0]
 
-# Calcul de l'erreur quadratique moyenne pour l'ensemble des prédictions
-mse = mean_squared_error(y_test, pd.DataFrame(predictions).T)
-print("MSE (Mean Squared Error):", mse)
-
-# Prédiction avec le modèle optimisé
-new_data = pd.DataFrame([[16, 29, 32, 36], [7, 13, 39, 47]], columns=X.columns)
-new_data = new_data.astype(str)
-new_predictions = []
-
-# Prédiction pour chaque chiffre de la séquence
-for i in range(5):
-    new_pred = model.predict(new_data)
-    new_predictions.append(new_pred)
-
-print("Prédictions:", new_predictions)
+print("La prédiction du prochain numéro est :", next_number)
