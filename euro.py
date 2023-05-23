@@ -1,29 +1,48 @@
 import csv
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.svm import SVR
+import random
 
-# Charger les données CSV
+# Chargement des données
 data = []
 with open('euromillions.csv', 'r') as file:
-    csv_reader = csv.reader(file, delimiter=';')
-    for row in csv_reader:
-        series = [int(num) for num in row[:5]]
-        data.append(series)
+    reader = csv.reader(file, delimiter=';')
+    for row in reader:
+        numbers = tuple(map(int, row[:5]))
+        data.append(numbers)
 
-# Convertir les séries de chiffres en listes
-X = [series[:-1] for series in data[:-1]]  # Séries d'apprentissage (toutes sauf la dernière)
-y = [series[1:] for series in data[1:]]    # Séries cibles (toutes sauf la première)
+# Construction de la matrice de transition
+transition_matrix = {}
+for i in range(len(data) - 1):
+    current_tuple = data[i]
+    next_tuple = data[i + 1]
 
-# Diviser les données en ensembles d'apprentissage et de test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    if current_tuple in transition_matrix:
+        if next_tuple in transition_matrix[current_tuple]:
+            transition_matrix[current_tuple][next_tuple] += 1
+        else:
+            transition_matrix[current_tuple][next_tuple] = 1
+    else:
+        transition_matrix[current_tuple] = {next_tuple: 1}
 
-# Entraîner le modèle SVR pour la régression
-model = SVR()
-model.fit(X_train, y_train)
+    # Normaliser les probabilités de transition
+    for current_tuple in transition_matrix:
+        total_transitions = sum(transition_matrix[current_tuple].values())
+        for next_tuple in transition_matrix[current_tuple]:
+            transition_matrix[current_tuple][next_tuple] /= total_transitions
 
-# Prédire les six prochains chiffres
-next_series = data[-1][:-1]
-predicted_series = model.predict([next_series])
+# Prédiction de la prochaine série de chiffres
+current_tuple = random.choice(data)
+predicted_sequence = list(current_tuple)
 
-print("La prédiction des six prochains chiffres est :", predicted_series)
+for _ in range(5):
+    if current_tuple in transition_matrix:
+        next_tuple = random.choices(
+            list(transition_matrix[current_tuple].keys()),
+            list(transition_matrix[current_tuple].values())
+        )[0]
+    else:
+        next_tuple = random.choice(data)
+
+    predicted_sequence.extend(next_tuple)
+    current_tuple = next_tuple
+
+print(predicted_sequence)
