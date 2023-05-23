@@ -12,6 +12,9 @@ data = data.iloc[:, :5]
 # Conversion de la colonne cible en chaînes de caractères
 data.iloc[:, 4] = data.iloc[:, 4].astype(str)
 
+# Suppression des lignes contenant des valeurs NaN
+data = data.dropna()
+
 # Séparation des fonctionnalités (X) et de la variable cible (y)
 X = data.iloc[:, :4]
 y = data.iloc[:, 4]
