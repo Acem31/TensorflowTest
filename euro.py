@@ -13,16 +13,20 @@ with open('euromillions.csv', 'r') as file:
 
 # Diviser les données en ensembles d'apprentissage et de test
 X = data[:-1]  # Séries d'apprentissage (toutes sauf la dernière)
-y = [series for series in data[1:]]  # Séries cibles (toutes sauf la première)
+y = np.array(data[1:])  # Séries cibles (toutes sauf la première)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+# Aplatir les séries cibles en une seule dimension
+y_train_flat = y_train.reshape(-1)
+y_test_flat = y_test.reshape(-1)
+
 # Entraîner le modèle SVM pour la classification multiclasse
 model = SVC()
-model.fit(X_train, y_train)
+model.fit(X_train, y_train_flat)
 
 # Prédire la prochaine série
 next_series = data[-1]
-predicted_series = model.predict([next_series])[0]
+predicted_series = model.predict([next_series]).reshape(-1, 5)
 
 print("La prédiction des prochains numéros est :", predicted_series)
