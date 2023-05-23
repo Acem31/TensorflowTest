@@ -33,7 +33,7 @@ for i in range(len(data) - 1):
 current_tuple = random.choice(data)
 predicted_sequence = list(current_tuple)
 
-for _ in range(5):
+for _ in range(4):  # Répéter quatre fois au lieu de cinq
     if current_tuple in transition_matrix:
         next_tuple = random.choices(
             list(transition_matrix[current_tuple].keys()),
@@ -45,4 +45,6 @@ for _ in range(5):
     predicted_sequence.extend(next_tuple)
     current_tuple = next_tuple
 
+# Afficher la séquence prédite de cinq chiffres
+predicted_sequence = predicted_sequence[-5:]  # Garder uniquement les cinq derniers chiffres
 print(predicted_sequence)
