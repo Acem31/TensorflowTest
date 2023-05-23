@@ -5,8 +5,10 @@ def execute_markov_number():
     process = subprocess.Popen(['python', 'markov_number.py'], stdout=subprocess.PIPE)
     output, error = process.communicate()
     output = output.decode().strip()
-    numbers = tuple(map(int, output.split()))
+    # Modifier la façon dont les tuples sont extraits de la sortie
+    numbers = tuple(map(int, output[1:-1].split(',')))
     return numbers
+
 
 def execute_markov_star():
     process = subprocess.Popen(['python', 'markov_star.py'], stdout=subprocess.PIPE)
