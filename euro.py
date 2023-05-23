@@ -13,17 +13,17 @@ with open('euromillions.csv', 'r') as file:
 
 # Convertir les séries de chiffres en listes
 X = [series[:-1] for series in data[:-1]]  # Séries d'apprentissage (toutes sauf la dernière)
-y = [series[-5:] for series in data[1:]]   # Séries cibles (toutes sauf la première)
+y = [series[-1] for series in data[:-1]]   # Numéro cible correspondant au dernier chiffre de chaque série
 
 # Diviser les données en ensembles d'apprentissage et de test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Entraîner le modèle SVM pour la classification multiclasse
+# Entraîner le modèle SVM
 model = SVC()
 model.fit(X_train, y_train)
 
 # Prédire la prochaine série
 next_series = data[-1][:-1]
-predicted_series = model.predict([next_series])[0]
+predicted_number = model.predict([next_series])[0]
 
-print("La prédiction des prochains numéros est :", predicted_series)
+print("La prédiction du prochain numéro est :", predicted_number)
