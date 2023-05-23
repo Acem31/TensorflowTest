@@ -13,7 +13,7 @@ with open('euromillions.csv', 'r') as file:
 
 # Diviser les données en ensembles d'apprentissage et de test
 X = data[:-1]  # Séries d'apprentissage (toutes sauf la dernière)
-y = [series[0] for series in data[1:]]  # Numéro cible (premier numéro de chaque série)
+y = data[1:]   # Séries cibles (toutes sauf la première)
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -21,8 +21,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 model = SVR()
 model.fit(X_train, y_train)
 
-# Prédire le prochain numéro
+# Prédire la prochaine série
 next_series = data[-1]
-next_number = model.predict([next_series])[0]
+predicted_series = model.predict([next_series])[0]
 
-print("La prédiction du prochain numéro est :", next_number)
+print("La prédiction des prochains numéros est :", predicted_series)
