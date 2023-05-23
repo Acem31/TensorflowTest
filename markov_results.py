@@ -14,8 +14,10 @@ def execute_markov_star():
     process = subprocess.Popen(['python', 'markov_star.py'], stdout=subprocess.PIPE)
     output, error = process.communicate()
     output = output.decode().strip()
-    numbers = tuple(map(int, output.split(":")[1].strip().split()))
+    # Modifier la façon dont les tuples sont extraits de la sortie
+    numbers = tuple(map(int, output.split(":")[1].strip()[1:-1].split(',')))
     return numbers
+
 
 def get_most_frequent_numbers(tuples):
     columns = zip(*tuples)
