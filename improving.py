@@ -49,17 +49,22 @@ def predict_next_tuple(current_tuple, transition_matrix):
 # Initialisation de la matrice de transition
 transition_matrix = {}
 
-# Boucle d'apprentissage
-for _ in range(10):  # Répéter le processus d'apprentissage 10 fois (à ajuster selon les besoins)
-    # Collecte de nouvelles données (supposons que vous ayez de nouvelles données dans une liste appelée "new_data")
-    new_data = [27;29;32;33;47]  # Remplacez [...] par vos nouvelles données
-    data.extend(new_data)
+# Collecte des 50 dernières lignes du CSV
+new_data = []
+with open('euromillions.csv', 'r') as file:
+    reader = csv.reader(file, delimiter=';')
+    lines = list(reader)
+    last_50_lines = lines[-50:]
 
-    # Mise à jour de la matrice de transition avec les nouvelles données
-    transition_matrix = update_transition_matrix(new_data, transition_matrix)
+    for row in last_50_lines:
+        numbers = tuple(map(int, row[:5]))
+        new_data.append(numbers)
 
-    # Normalisation des probabilités de transition
-    transition_matrix = normalize_transition_probabilities(transition_matrix)
+# Mise à jour de la matrice de transition avec les nouvelles données
+transition_matrix = update_transition_matrix(new_data, transition_matrix)
+
+# Normalisation des probabilités de transition
+transition_matrix = normalize_transition_probabilities(transition_matrix)
 
 # Récupération de la dernière ligne du CSV
 last_row = data[-1]
