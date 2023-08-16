@@ -3,7 +3,7 @@ import random
 
 # Charger les données à partir du fichier CSV
 data = []
-with open('euromillions.csv', 'r') as csvfile:
+with open('votre_fichier.csv', 'r') as csvfile:
     reader = csv.reader(csvfile, delimiter=';')
     for row in reader:
         data.append([int(cell) for cell in row])
@@ -12,7 +12,7 @@ with open('euromillions.csv', 'r') as csvfile:
 def generate_new_row(data):
     new_row = []
 
-    for i in range(len(data[0])):
+    for i in range(len(data[0]) - 2):
         values = [row[i] for row in data]
         # Calculer la valeur moyenne et l'écart type des valeurs dans la colonne
         avg = sum(values) / len(values)
@@ -20,6 +20,12 @@ def generate_new_row(data):
 
         # Générer une nouvelle valeur basée sur une distribution normale
         new_value = int(random.gauss(avg, std_dev))
+        new_row.append(new_value)
+
+    # Générer les deux derniers numéros basés sur les tendances observées
+    for i in range(len(data[0]) - 2, len(data[0])):
+        values = [row[i] for row in data]
+        new_value = random.choice(values)
         new_row.append(new_value)
 
     return new_row
