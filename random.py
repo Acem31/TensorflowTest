@@ -3,7 +3,7 @@ import random
 
 # Charger les données à partir du fichier CSV
 data = []
-with open('votre_fichier.csv', 'r') as csvfile:
+with open('euromillions.csv', 'r') as csvfile:
     reader = csv.reader(csvfile, delimiter=';')
     for row in reader:
         data.append([int(cell) for cell in row])
