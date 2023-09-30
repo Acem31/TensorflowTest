@@ -4,16 +4,13 @@ from sklearn.metrics import accuracy_score
 from keras.models import Sequential
 from keras.layers import Dense
 
-data = pd.read_csv('euromillions.csv')
+data = pd.read_csv('euromillions.csv', sep=';', header=None)
 
-train_data = data.iloc[:-5]  # Toutes les lignes sauf les 5 dernières
-test_data = data.iloc[-5:]   # Les 5 dernières lignes
+X = data.iloc[:, :5].values
 
-X_train = train_data.iloc[:, :-1].values
-y_train = train_data.iloc[:, -1].values
+y = data.iloc[:, 5:].values
 
-X_test = test_data.iloc[:, :-1].values
-y_test = test_data.iloc[:, -1].values
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 def create_model():
     model = Sequential()
