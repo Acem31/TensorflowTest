@@ -5,13 +5,11 @@ from sklearn.metrics import accuracy_score
 from keras.models import Sequential
 from keras.layers import Dense
 
-# Reformater les étiquettes en tuples de 5 numéros
 def reformat_labels(labels):
     reformatted_labels = []
     for label in labels:
-        # Les numéros sont séparés par des points virgules, nous les séparons
-        numbers = list(map(int, label.split(';')))
-        reformatted_labels.append(tuple(numbers))
+        numbers = tuple(label)
+        reformatted_labels.append(numbers)
     return np.array(reformatted_labels)
 
 # Charger les données en tant que tuples
