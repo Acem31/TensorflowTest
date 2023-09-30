@@ -7,7 +7,7 @@ from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.optimizers import Adam
 
 # Charger les données CSV et prétraiter
-data = pd.read_csv('euromillions.csv', header=None)
+data = pd.read_csv('euromillions.csv', sep=';', header=None)
 
 if data.shape[1] < 5:
     print("Le CSV doit avoir au moins 5 colonnes.")
