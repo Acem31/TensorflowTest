@@ -8,6 +8,10 @@ from keras.layers import Dense
 def reformat_labels(labels):
     reformatted_labels = []
     for label in labels:
+        # Assurez-vous que chaque tuple a exactement 5 éléments
+        if len(label) != 5:
+            print(f"Erreur : Tuple avec une dimension différente de 5 : {label}")
+            continue
         numbers = tuple(label)
         reformatted_labels.append(numbers)
     return np.array(reformatted_labels)
