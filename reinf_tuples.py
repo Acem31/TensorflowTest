@@ -73,7 +73,8 @@ while success_rate < target_success_rate:
     # Comparer les prédictions avec les 10 dernières lignes du fichier
     correct_predictions = 0
     for i in range(10):
-        if predicted_tuples[i] == y_test[i]:
+        # Vous avez 5 numéros dans chaque tuple, donc on garde uniquement les 5 premiers
+        if predicted_tuples[i] == tuple(map(int, y_test[i][:5])):
             correct_predictions += 1
     
     # Calculer le taux de réussite
