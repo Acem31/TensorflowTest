@@ -9,6 +9,12 @@ data = pd.read_csv('euromillions.csv')
 train_data = data.iloc[:-5]  # Toutes les lignes sauf les 5 dernières
 test_data = data.iloc[-5:]   # Les 5 dernières lignes
 
+X_train = train_data.drop('colonne_cible', axis=1)
+y_train = train_data['colonne_cible']
+
+X_test = test_data.drop('colonne_cible', axis=1)
+y_test = test_data['colonne_cible']
+
 def create_model():
     model = Sequential()
     model.add(Dense(32, activation='relu', input_dim=X_train.shape[1]))
