@@ -9,7 +9,8 @@ from tensorflow.keras.optimizers import Adam
 # Charger les données CSV et prétraiter
 data = pd.read_csv('euromillions.csv', header=None)
 data = data.iloc[:, :5]
-data.columns = ['Num1', 'Num2', 'Num3', 'Num4', 'Num5']
+data.columns = [f'Num{i+1}' for i in range(seq_length)]
+
 
 # Fonction pour préparer les séquences
 def prepare_sequences(data, seq_length):
