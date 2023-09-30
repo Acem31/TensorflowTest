@@ -27,29 +27,28 @@ def prepare_sequences(data, seq_length):
         targets.append(label)
     return np.array(sequences), np.array(targets)
 
-# Préparer les séquences pour l'entraînement
-seq_length = 10  # Vous pouvez choisir la longueur que vous préférez
-X, y = prepare_sequences(data, seq_length)
-
-# Diviser les données en ensembles d'entraînement et de test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Définir le modèle RNN
-model = Sequential([
-    LSTM(128, input_shape=(seq_length, 5)),
-    Dense(1)
-])
-
-# Compiler le modèle
-model.compile(optimizer=Adam(), loss='mean_squared_error')
-
 # Initialiser le taux de réussite à un faible nombre pour entrer dans la boucle
 accuracy = 0.0
 
-# Boucle d'apprentissage jusqu'à atteindre le taux de réussite cible
 while accuracy < 0.75:
+    # Préparer les séquences pour l'entraînement
+    seq_length = 10  # Vous pouvez choisir la longueur que vous préférez
+    X, y = prepare_sequences(data, seq_length)
+    
+    # Diviser les données en ensembles d'entraînement et de test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    # Définir le modèle RNN
+    model = Sequential([
+        LSTM(128, input_shape=(seq_length, 5)),
+        Dense(1)
+    ])
+    
+    # Compiler le modèle
+    model.compile(optimizer=Adam(), loss='mean_squared_error')
+    
     # Entraîner le modèle
-    model.fit(X_train, y_train, epochs=1, batch_size=32, verbose=1)
+    model.fit(X_train, y_train, epochs=10, batch_size=32, verbose=1)
     
     # Prédire sur les données de test
     predictions = model.predict(X_test)
