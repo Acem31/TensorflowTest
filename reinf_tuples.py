@@ -1,0 +1,69 @@
+import csv
+import pandas as pd
+import numpy as np
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from keras.models import Sequential
+from keras.layers import Dense
+
+# Charger les données en tant que tuples
+data = []
+with open('euromillions.csv', 'r') as file:
+    reader = csv.reader(file, delimiter=';')
+    for row in reader:
+        numbers = tuple(map(int, row[:5]))
+        result = tuple(map(int, row[5:]))
+        data.append((numbers, result))
+
+# Convertir les tuples en DataFrame
+data_df = pd.DataFrame(data, columns=['numbers', 'result'])
+
+# Extraire X et y à partir du DataFrame
+X = np.array([np.array(x) for x in data_df['numbers']])
+y = np.array([np.array(r) for r in data_df['result']])
+
+# Diviser les données
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Fonction pour créer le modèle Keras
+def create_model():
+    model = Sequential()
+    model.add(Dense(32, activation='relu', input_dim=X_train.shape[1]))
+    model.add(Dense(2))  # Deux sorties pour le second tirage
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    return model
+
+learning_rate = 0.01
+discount_factor = 0.95
+
+target_success_rate = 0.75
+
+model = create_model()
+
+success_rate = 0.0
+num_iterations = 0
+
+while success_rate < target_success_rate:
+    num_iterations += 1
+    
+    predictions = model.predict(X_test)
+    
+    success_rate = accuracy_score(np.argmax(y_test, axis=1), np.argmax(predictions, axis=1))
+    
+    reward = success_rate * 100  # Vous pouvez définir votre propre fonction de récompense
+    
+    target = np.array([reward] * len(predictions))  # La récompense est la même pour chaque action
+    model.fit(X_test, y_test, sample_weight=target, epochs=1, verbose=0)
+    
+    print('Taux de réussite à l\'itération', num_iterations, ':', success_rate)
+
+print('Nombre d\'itérations nécessaires pour atteindre le seuil de réussite :', num_iterations)
+
+def make_prediction(model, X):
+    # Faire la prédiction
+    predictions = model.predict(X)
+    # Afficher les prédictions
+    print('Prédictions :', predictions)
+
+print('Seuil de réussite atteint. Faisons une prédiction.')
+make_prediction(model, X_test)
