@@ -21,6 +21,20 @@ data_df = pd.DataFrame(data, columns=['numbers', 'result'])
 X = np.array([np.array(x) for x in data_df['numbers']])
 y = np.array([np.array(r) for r in data_df['result']])
 
+# Reformater les étiquettes en tuples de 5 numéros
+def reformat_labels(labels):
+    reformatted_labels = []
+    for label in labels:
+        # Les numéros sont séparés par des points virgules, nous les séparons
+        numbers = list(map(int, label.split(';')))
+        reformatted_labels.append(tuple(numbers))
+    return np.array(reformatted_labels)
+
+# Reformater les étiquettes pour l'entraînement et les tests
+y_train = reformat_labels(y_train)
+y_test = reformat_labels(y_test)
+
+
 # Sélectionner toutes les lignes sauf les 10 dernières pour l'entraînement
 X_train = X[:-10]
 y_train = y[:-10]
@@ -33,9 +47,10 @@ y_test = y[-10:]
 def create_model():
     model = Sequential()
     model.add(Dense(32, activation='relu', input_dim=X_train.shape[1]))
-    model.add(Dense(5))  # Cinq sorties pour les cinq numéros
+    model.add(Dense(5))  # Modifier en 5 pour correspondre au nombre de numéros
     model.compile(optimizer='adam', loss='mean_squared_error')
     return model
+
 
 target_success_rate = 0.75
 success_rate = 0.0
