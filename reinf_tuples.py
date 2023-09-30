@@ -27,10 +27,18 @@ def prepare_sequences(data, seq_length):
         targets.append(label)
     return np.array(sequences), np.array(targets)
 
-# Initialiser le taux de réussite à un faible nombre pour entrer dans la boucle
-accuracy = 0.0
+# Paramètres initiaux
+best_accuracy = 0.0
+best_model = None
+best_epochs = 10
+best_batch_size = 32
+target_accuracy = 0.75
 
-while accuracy < 0.75:
+# Hyperparamètres
+epochs = 10
+batch_size = 32
+
+while best_accuracy < target_accuracy:
     # Préparer les séquences pour l'entraînement
     seq_length = 10  # Vous pouvez choisir la longueur que vous préférez
     X, y = prepare_sequences(data, seq_length)
@@ -48,7 +56,7 @@ while accuracy < 0.75:
     model.compile(optimizer=Adam(), loss='mean_squared_error')
     
     # Entraîner le modèle
-    model.fit(X_train, y_train, epochs=10, batch_size=32, verbose=1)
+    model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
     
     # Prédire sur les données de test
     predictions = model.predict(X_test)
@@ -56,11 +64,28 @@ while accuracy < 0.75:
     
     # Calculer le taux de réussite
     accuracy = accuracy_score(y_test, rounded_predictions)
-    print('Taux de réussite :', accuracy)
+    print(f'Taux de réussite avec {epochs} époques et {batch_size} taille de lot : {accuracy}')
+    
+    # Mettre à jour le meilleur modèle et les meilleurs hyperparamètres
+    if accuracy > best_accuracy:
+        best_accuracy = accuracy
+        best_model = model
+        best_epochs = epochs
+        best_batch_size = batch_size
+    
+    # Ajuster les hyperparamètres pour la prochaine itération
+    epochs *= 2  # Double le nombre d'époques
+    batch_size = int(batch_size * 1.5)  # Augmente la taille du lot de 50%
+
+# Utiliser le meilleur modèle trouvé
+model = best_model
 
 # Prendre la dernière ligne du CSV comme entrée pour la prédiction
 last_line = data.iloc[-1, :5].values.reshape(1, seq_length, 5)
 
 # Prédire les prochains numéros basés sur la dernière ligne
 predicted_number = int(model.predict(last_line)[0, 0])
+print('Meilleur taux de réussite atteint :', best_accuracy)
+print('Meilleur nombre d\'époques :', best_epochs)
+print('Meilleure taille de lot :', best_batch_size)
 print('Prédiction du prochain numéro :', predicted_number)
