@@ -8,9 +8,8 @@ from tensorflow.keras.optimizers import Adam
 
 # Charger les données CSV et prétraiter
 data = pd.read_csv('euromillions.csv', header=None)
-data = data.iloc[:, :5]
-data.columns = [f'Num{i+1}' for i in range(seq_length)]
-
+data = data.iloc[:, :5]  # Garder seulement les 5 premières colonnes
+data.columns = [f'Num{i+1}' for i in range(5)]  # Renommer les colonnes
 
 # Fonction pour préparer les séquences
 def prepare_sequences(data, seq_length):
@@ -24,7 +23,7 @@ def prepare_sequences(data, seq_length):
     return np.array(sequences), np.array(targets)
 
 # Préparer les séquences pour l'entraînement
-seq_length = 10
+seq_length = 10  # Vous pouvez choisir la longueur que vous préférez
 X, y = prepare_sequences(data, seq_length)
 
 # Diviser les données en ensembles d'entraînement et de test
