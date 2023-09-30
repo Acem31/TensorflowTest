@@ -2,7 +2,6 @@ import csv
 import pandas as pd
 import numpy as np
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.layers import Dense
 
@@ -22,8 +21,13 @@ data_df = pd.DataFrame(data, columns=['numbers', 'result'])
 X = np.array([np.array(x) for x in data_df['numbers']])
 y = np.array([np.array(r) for r in data_df['result']])
 
-# Diviser les données
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Sélectionner toutes les lignes sauf les 10 dernières pour l'entraînement
+X_train = X[:-10]
+y_train = y[:-10]
+
+# Sélectionner les 10 dernières lignes pour les tests
+X_test = X[-10:]
+y_test = y[-10:]
 
 # Fonction pour créer le modèle Keras
 def create_model():
@@ -33,32 +37,37 @@ def create_model():
     model.compile(optimizer='adam', loss='mean_squared_error')
     return model
 
-learning_rate = 0.01
-discount_factor = 0.95
-
 target_success_rate = 0.75
-
-model = create_model()
-
 success_rate = 0.0
 num_iterations = 0
 
 while success_rate < target_success_rate:
     num_iterations += 1
     
+    model = create_model()  # Recréer le modèle à chaque itération
+    
+    # Entraîner le modèle
+    model.fit(X_train, y_train, epochs=1, verbose=0)
+    
+    # Faire des prédictions sur les données de test
     predictions = model.predict(X_test)
     
+    # Calculer le taux de réussite
     success_rate = accuracy_score(np.argmax(y_test, axis=1), np.argmax(predictions, axis=1))
-    
-    reward = success_rate * 100  # Vous pouvez définir votre propre fonction de récompense
-    
-    target = np.array([reward] * len(predictions))  # La récompense est la même pour chaque action
-    model.fit(X_test, y_test, sample_weight=target, epochs=1, verbose=0)
     
     print('Taux de réussite à l\'itération', num_iterations, ':', success_rate)
 
 print('Nombre d\'itérations nécessaires pour atteindre le seuil de réussite :', num_iterations)
 
+# Intégrer les 10 dernières lignes dans l'apprentissage
+X_train = np.concatenate((X_train, X_test), axis=0)
+y_train = np.concatenate((y_train, y_test), axis=0)
+
+# Réentraîner le modèle avec les nouvelles données
+model = create_model()
+model.fit(X_train, y_train, epochs=1, verbose=1)
+
+# Faire une prédiction
 def make_prediction(model, X):
     # Faire la prédiction
     predictions = model.predict(X)
