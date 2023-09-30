@@ -33,7 +33,7 @@ y_test = y[-10:]
 def create_model():
     model = Sequential()
     model.add(Dense(32, activation='relu', input_dim=X_train.shape[1]))
-    model.add(Dense(2))  # Deux sorties pour le second tirage
+    model.add(Dense(5))  # Cinq sorties pour les cinq numéros
     model.compile(optimizer='adam', loss='mean_squared_error')
     return model
 
@@ -52,8 +52,17 @@ while success_rate < target_success_rate:
     # Faire des prédictions sur les données de test
     predictions = model.predict(X_test)
     
+    # Convertir les prédictions en tuples de 5 numéros
+    predicted_tuples = [tuple(map(int, prediction)) for prediction in predictions]
+    
+    # Comparer les prédictions avec les 10 dernières lignes du fichier
+    correct_predictions = 0
+    for i in range(10):
+        if predicted_tuples[i] == tuple(map(int, y_test[i])):
+            correct_predictions += 1
+    
     # Calculer le taux de réussite
-    success_rate = accuracy_score(np.argmax(y_test, axis=1), np.argmax(predictions, axis=1))
+    success_rate = correct_predictions / 10
     
     print('Taux de réussite à l\'itération', num_iterations, ':', success_rate)
 
@@ -68,11 +77,11 @@ model = create_model()
 model.fit(X_train, y_train, epochs=1, verbose=1)
 
 # Faire une prédiction
-def make_prediction(model, X):
-    # Faire la prédiction
-    predictions = model.predict(X)
-    # Afficher les prédictions
-    print('Prédictions :', predictions)
+def make_prediction(model):
+    # Générer une prédiction
+    prediction = model.predict(np.zeros((1, 5)))  # Ici, nous utilisons un tableau de zéros comme entrée, vous pouvez changer cela
+    # Afficher la prédiction
+    print('Prédiction :', tuple(map(int, prediction[0])))
 
 print('Seuil de réussite atteint. Faisons une prédiction.')
-make_prediction(model, X_test)
+make_prediction(model)
