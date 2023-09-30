@@ -8,6 +8,11 @@ from tensorflow.keras.optimizers import Adam
 
 # Charger les données CSV et prétraiter
 data = pd.read_csv('euromillions.csv', header=None)
+
+if data.shape[1] < 5:
+    print("Le CSV doit avoir au moins 5 colonnes.")
+    exit()
+    
 data = data.iloc[:, :5]  # Garder seulement les 5 premières colonnes
 data.columns = [f'Num{i+1}' for i in range(5)]  # Renommer les colonnes
 
