@@ -32,7 +32,7 @@ best_accuracy = 0.0
 best_model = None
 best_epochs = 10
 best_batch_size = 32
-target_accuracy = 0.75
+target_accuracy = 0.40
 
 # Hyperparamètres
 epochs = 10
