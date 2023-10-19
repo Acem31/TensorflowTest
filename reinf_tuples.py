@@ -6,6 +6,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import top_k_categorical_accuracy
+import tensorflow as tf
 
 # Charger les données CSV et prétraiter
 data = pd.read_csv('euromillions.csv', sep=';', header=None)
@@ -27,6 +28,14 @@ def prepare_sequences(data, seq_length):
         sequences.append(seq.values)
         targets.append(label)
     return np.array(sequences), np.array(targets)
+
+def calculate_top_k_accuracy(y_true, y_pred, k=5):
+    top_k = tf.nn.top_k(y_pred, k)
+    top_k_indices = top_k.indices
+    true_indices = tf.argmax(y_true, axis=1)
+    matches = tf.equal(tf.expand_dims(true_indices, -1), top_k_indices)
+    top_k_matches = tf.reduce_any(matches, axis=1)
+    return tf.reduce_mean(tf.cast(top_k_matches, tf.float32))
 
 # Paramètres initiaux
 best_accuracy = 0.0
@@ -72,7 +81,7 @@ with open("results.txt", "w") as results_file:
         # Calculer les métriques
         accuracy = accuracy_score(y_test, rounded_predictions)
         precision = precision_score(y_test, rounded_predictions, average='weighted')
-        topk_accuracy = top_k_categorical_accuracy(y_test, predictions, k=5)
+        topk_accuracy = calculate_top_k_accuracy(y_test, predictions, k=5)
         print(f'Taux de réussite avec {epochs} époques et {batch_size} taille de lot : {accuracy}')
         
         # Écrire les résultats dans le fichier
