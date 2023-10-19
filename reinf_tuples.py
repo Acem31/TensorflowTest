@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score, top_k_accuracy
+from sklearn.metrics import accuracy_score, precision_score
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.metrics import top_k_categorical_accuracy
 
 # Charger les données CSV et prétraiter
 data = pd.read_csv('euromillions.csv', sep=';', header=None)
@@ -71,7 +72,7 @@ with open("results.txt", "w") as results_file:
         # Calculer les métriques
         accuracy = accuracy_score(y_test, rounded_predictions)
         precision = precision_score(y_test, rounded_predictions, average='weighted')
-        topk_accuracy = top_k_accuracy(y_test, predictions, k=5)
+        topk_accuracy = top_k_categorical_accuracy(y_test, predictions, k=5)
         print(f'Taux de réussite avec {epochs} époques et {batch_size} taille de lot : {accuracy}')
         
         # Écrire les résultats dans le fichier
