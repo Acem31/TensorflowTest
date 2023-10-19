@@ -5,8 +5,6 @@ from sklearn.metrics import accuracy_score, precision_score
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.metrics import top_k_categorical_accuracy
-import tensorflow as tf
 
 # Charger les données CSV et prétraiter
 data = pd.read_csv('euromillions.csv', sep=';', header=None)
@@ -29,18 +27,9 @@ def prepare_sequences(data, seq_length):
         targets.append(label)
     return np.array(sequences), np.array(targets)
 
-def calculate_top_k_accuracy(y_true, y_pred, k=5):
-    top_k = tf.nn.top_k(y_pred, k)
-    top_k_indices = top_k.indices
-    true_indices = tf.argmax(y_true, axis=1)
-    matches = tf.equal(tf.expand_dims(true_indices, -1), top_k_indices)
-    top_k_matches = tf.reduce_any(matches, axis=1)
-    return tf.reduce_mean(tf.cast(top_k_matches, tf.float32))
-
 # Paramètres initiaux
 best_accuracy = 0.0
 best_precision = 0.0
-best_topk_accuracy = 0.0
 best_model = None
 best_epochs = 10
 best_batch_size = 32
@@ -52,7 +41,7 @@ batch_size = 32
 
 # Créer un fichier de résultats
 with open("results.txt", "w") as results_file:
-    results_file.write("Epochs, Batch Size, Accuracy, Precision, Top-K Accuracy\n")
+    results_file.write("Epochs, Batch Size, Accuracy, Precision\n")
 
     while best_accuracy < target_accuracy:
         # Préparer les séquences pour l'entraînement
@@ -81,17 +70,15 @@ with open("results.txt", "w") as results_file:
         # Calculer les métriques
         accuracy = accuracy_score(y_test, rounded_predictions)
         precision = precision_score(y_test, rounded_predictions, average='weighted')
-        topk_accuracy = calculate_top_k_accuracy(y_test, predictions, k=5)
         print(f'Taux de réussite avec {epochs} époques et {batch_size} taille de lot : {accuracy}')
         
         # Écrire les résultats dans le fichier
-        results_file.write(f"{epochs}, {batch_size}, {accuracy}, {precision}, {topk_accuracy}\n")
+        results_file.write(f"{epochs}, {batch_size}, {accuracy}, {precision}\n")
 
         # Mettre à jour les meilleures métriques et le meilleur modèle
         if accuracy > best_accuracy:
             best_accuracy = accuracy
             best_precision = precision
-            best_topk_accuracy = topk_accuracy
             best_model = model
             best_epochs = epochs
             best_batch_size = batch_size
@@ -112,5 +99,4 @@ print('Meilleur taux de réussite atteint :', best_accuracy)
 print('Meilleur nombre d\'époques :', best_epochs)
 print('Meilleure taille de lot :', best_batch_size)
 print('Meilleure précision :', best_precision)
-print('Meilleure Top-K Accuracy :', best_topk_accuracy)
 print('Prédiction du prochain numéro :', predicted_number)
