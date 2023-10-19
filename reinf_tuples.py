@@ -40,7 +40,7 @@ epochs = 10
 batch_size = 32
 
 # Créer un fichier de résultats
-with open("results.txt", "w") as results_file:
+with open("results.txt", "a") as results_file:
     results_file.write("Epochs, Batch Size, Accuracy, Precision\n")
 
     while best_accuracy < target_accuracy:
