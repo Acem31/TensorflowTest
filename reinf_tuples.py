@@ -59,8 +59,8 @@ with open("results.txt", "a") as results_file:
         model.add(Dense(64, activation='relu'))
         model.add(Dense(5, activation='softmax'))
 
-        # Compiler le modèle
-        model.compile(optimizer=Adam(), loss='categorical_crossentropy')
+        # Compiler le modèle en utilisant "sparse_categorical_crossentropy" comme perte
+        model.compile(optimizer=Adam(), loss='sparse_categorical_crossentropy')
 
         # Entraîner le modèle
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
