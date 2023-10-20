@@ -53,9 +53,9 @@ with open("results.txt", "a") as results_file:
 
         # Définir le modèle CNN
         model = Sequential()
-        model.add(Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(seq_length, 5))
-        model.add(MaxPooling1D(pool_size=2)
-        model.add(Flatten()
+        model.add(Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(seq_length, 5)))
+        model.add(MaxPooling1D(pool_size=2))
+        model.add(Flatten())
         model.add(Dense(64, activation='relu'))
         model.add(Dense(5, activation='softmax'))
 
