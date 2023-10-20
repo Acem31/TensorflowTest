@@ -51,11 +51,11 @@ with open("results.txt", "a") as results_file:
         # Diviser les données en ensembles d'entraînement et de test
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Définir le modèle RNN
-        model = Sequential([
-            LSTM(128, input_shape=(seq_length, 5)),
-            Dense(1)
-        ])
+        # Définir le modèle RNN avec deux couches LSTM empilées
+        model = Sequential()
+        model.add(LSTM(128, input_shape=(seq_length, 5), return_sequences=True))
+        model.add(LSTM(128))
+        model.add(Dense(5))
 
         # Compiler le modèle
         model.compile(optimizer=Adam(), loss='mean_squared_error')
