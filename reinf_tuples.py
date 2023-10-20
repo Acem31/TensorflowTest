@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, precision_score
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dense, Dropout
+from tensorflow.keras.layers import Input, Dense, Flatten
+from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 
 # Charger les données CSV et prétraiter
@@ -12,17 +12,17 @@ data = pd.read_csv('euromillions.csv', sep=';', header=None)
 if data.shape[1] < 5:
     print("Le CSV doit avoir au moins 5 colonnes.")
     exit()
-    
+
 data = data.iloc[:, :5]  # Garder seulement les 5 premières colonnes
-data.columns = [f'Num{i+1}' for i in range(5)]  # Renommer les colonnes
+data.columns = [f'Num{i + 1}' for i in range(5)]  # Renommer les colonnes
 
 # Fonction pour préparer les séquences
 def prepare_sequences(data, seq_length):
     sequences = []
     targets = []
     for i in range(len(data) - seq_length):
-        seq = data.iloc[i:i+seq_length]
-        label = data.iloc[i+seq_length]['Num1']
+        seq = data.iloc[i:i + seq_length]
+        label = data.iloc[i + seq_length]['Num1']
         sequences.append(seq.values)
         targets.append(label)
     return np.array(sequences), np.array(targets)
@@ -51,29 +51,25 @@ with open("results.txt", "a") as results_file:
         # Diviser les données en ensembles d'entraînement et de test
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Définir le modèle CNN
-        model = Sequential()
-        model.add(Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(seq_length, 5)))
-        model.add(MaxPooling1D(pool_size=2))
-        model.add(Flatten())
-        model.add(Dense(64, activation='relu'))
-        model.add(Dense(5, activation='softmax'))
+        # Créer un modèle de régression logistique multinomiale
+        input_layer = Input(shape=(seq_length, 5))
+        flatten = Flatten()(input_layer)
+        output_layer = Dense(50, activation='softmax')(flatten)  # 50 classes pour les numéros possibles
 
-        # Compiler le modèle en utilisant "sparse_categorical_crossentropy" comme perte
-        model.compile(optimizer=Adam(), loss='sparse_categorical_crossentropy')
+        model = Model(inputs=input_layer, outputs=output_layer)
+        model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
 
         # Entraîner le modèle
         model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
 
         # Prédire sur les données de test
         predictions = model.predict(X_test)
-        predicted_numbers = np.argmax(predictions, axis=1)
-        
-        # Calculer les métriques
-        accuracy = accuracy_score(y_test, predicted_numbers)
-        precision = precision_score(y_test, predicted_numbers, average='weighted')
+
+        # Évaluer le modèle
+        accuracy = accuracy_score(np.argmax(y_test, axis=1), np.argmax(predictions, axis=1))
+        precision = precision_score(np.argmax(y_test, axis=1), np.argmax(predictions, axis=1), average='weighted')
         print(f'Taux de réussite avec {epochs} époques et {batch_size} taille de lot : {accuracy}')
-        
+
         # Écrire les résultats dans le fichier
         results_file.write(f"{epochs}, {batch_size}, {accuracy}, {precision}\n")
 
@@ -94,11 +90,10 @@ model = best_model
 
 # Prendre la dernière ligne du CSV comme entrée pour la prédiction
 last_line = data.iloc[-1, :5].values.reshape(1, seq_length, 5)
-     
+
 # Prédire les prochains numéros basés sur la dernière ligne
 predictions = model.predict(last_line)
-predicted_numbers = np.argmax(predictions, axis=1)
-                 
+predicted_number = np.argmax(predictions, axis=1)[0]
 print('Meilleur taux de réussite atteint :', best_accuracy)
 print('Meilleur nombre d\'époques :', best_epochs)
 print('Meilleure taille de lot :', best_batch_size)
