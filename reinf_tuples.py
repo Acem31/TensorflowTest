@@ -55,7 +55,7 @@ with open("results.txt", "a") as results_file:
         # Créer un modèle de régression logistique multinomiale
         input_layer = Input(shape=(seq_length, 5))
         flatten = Flatten()(input_layer)
-        output_layer = Dense(50, activation='softmax')(flatten)  # 50 classes pour les numéros possibles
+        output_layer = Dense(34, activation='softmax')(flatten)  # 50 classes pour les numéros possibles
 
         model = Model(inputs=input_layer, outputs=output_layer)
         model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
