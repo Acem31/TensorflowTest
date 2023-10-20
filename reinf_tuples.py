@@ -5,6 +5,7 @@ from sklearn.metrics import accuracy_score, precision_score
 from tensorflow.keras.layers import Input, Dense, Flatten
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
+from sklearn.preprocessing import OneHotEncoder
 
 # Charger les données CSV et prétraiter
 data = pd.read_csv('euromillions.csv', sep=';', header=None)
@@ -59,15 +60,20 @@ with open("results.txt", "a") as results_file:
         model = Model(inputs=input_layer, outputs=output_layer)
         model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
 
+        # Créer un encodeur one-hot pour les étiquettes
+        encoder = OneHotEncoder(sparse=False)
+        y_train_encoded = encoder.fit_transform(y_train.reshape(-1, 1))
+        y_test_encoded = encoder.transform(y_test.reshape(-1, 1))
+
         # Entraîner le modèle
-        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size, verbose=1)
+        model.fit(X_train, y_train_encoded, epochs=epochs, batch_size=batch_size, verbose=1)
 
         # Prédire sur les données de test
         predictions = model.predict(X_test)
 
         # Évaluer le modèle
-        accuracy = accuracy_score(np.argmax(y_test, axis=1), np.argmax(predictions, axis=1))
-        precision = precision_score(np.argmax(y_test, axis=1), np.argmax(predictions, axis=1), average='weighted')
+        accuracy = accuracy_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1))
+        precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1), average='weighted')
         print(f'Taux de réussite avec {epochs} époques et {batch_size} taille de lot : {accuracy}')
 
         # Écrire les résultats dans le fichier
