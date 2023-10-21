@@ -2,6 +2,7 @@ import os
 
 # Définir la variable d'environnement TF_ENABLE_ONEDNN_OPTS sur 0
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 import numpy as np
 import pandas as pd
