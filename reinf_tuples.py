@@ -32,64 +32,65 @@ def prepare_sequences(data, seq_length):
 best_accuracy = 0.0
 best_precision = 0.0
 best_model = None
-best_epochs = 10
-best_batch_size = 32
-target_accuracy = 0.40
+best_epochs = 0
+best_batch_size = 0
+target_accuracy = 0.20  # Nouvelle cible de précision (20 %)
 
-# Hyperparamètres
-epochs = 10
-batch_size = 32
+# Hyperparamètres à explorer
+param_grid = {
+    'epochs': [5120, 10240, 20480],
+    'batch_size': [1228, 2456, 4912],
+    'learning_rate': [0.001, 0.01, 0.1],
+    'regularization': [0.001, 0.01, 0.1]
+}
 
 # Créer un fichier de résultats
 with open("results.txt", "a") as results_file:
     results_file.write("Epochs, Batch Size, Accuracy, Precision\n")
 
-    while best_accuracy < target_accuracy:
-        # Préparer les séquences pour l'entraînement
-        seq_length = 10  # Vous pouvez choisir la longueur que vous préférez
-        X, y = prepare_sequences(data, seq_length)
+    for epochs in param_grid['epochs']:
+        for batch_size in param_grid['batch_size']:
+            for learning_rate in param_grid['learning_rate']:
+                for regularization in param_grid['regularization']:
+                    # Préparer les séquences pour l'entraînement
+                    seq_length = 10  # Vous pouvez choisir la longueur que vous préférez
+                    X, y = prepare_sequences(data, seq_length)
 
-        # Diviser les données en ensembles d'entraînement et de test
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+                    # Diviser les données en ensembles d'entraînement et de test
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Créer un modèle de régression logistique multinomiale
-        input_layer = Input(shape=(seq_length, 5))
-        flatten = Flatten()(input_layer)
-        output_layer = Dense(34, activation='softmax')(flatten)  # 50 classes pour les numéros possibles
+                    # Créer un modèle de régression logistique multinomiale
+                    input_layer = Input(shape=(seq_length, 5))
+                    flatten = Flatten()(input_layer)
+                    output_layer = Dense(34, activation='softmax', kernel_regularizer=tf.keras.regularizers.l2(regularization))(flatten)
 
-        model = Model(inputs=input_layer, outputs=output_layer)
-        model.compile(optimizer=Adam(), loss='categorical_crossentropy', metrics=['accuracy'])
+                    model = Model(inputs=input_layer, outputs=output_layer)
+                    model.compile(optimizer=Adam(learning_rate=learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
 
-        # Créer un encodeur one-hot pour les étiquettes
-        encoder = OneHotEncoder(sparse=False)
-        y_train_encoded = encoder.fit_transform(y_train.reshape(-1, 1))
-        y_test_encoded = encoder.transform(y_test.reshape(-1, 1))
+                    # Créer un encodeur one-hot pour les étiquettes
+                    encoder = OneHotEncoder(sparse=False)
+                    y_train_encoded = encoder.fit_transform(y_train.reshape(-1, 1))
+                    y_test_encoded = encoder.transform(y_test.reshape(-1, 1))
 
-        # Entraîner le modèle
-        model.fit(X_train, y_train_encoded, epochs=epochs, batch_size=batch_size, verbose=1)
+                    # Entraîner le modèle
+                    model.fit(X_train, y_train_encoded, epochs=epochs, batch_size=batch_size, verbose=1)
 
-        # Prédire sur les données de test
-        predictions = model.predict(X_test)
+                    # Prédire sur les données de test
+                    predictions = model.predict(X_test)
 
-        # Évaluer le modèle
-        accuracy = accuracy_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1))
-        precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1), average='weighted')
-        print(f'Taux de réussite avec {epochs} époques et {batch_size} taille de lot : {accuracy}')
+                    # Évaluer le modèle
+                    accuracy = accuracy_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1))
+                    precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1), average='weighted')
+                    print(f'Taux de réussite avec {epochs} époques, {batch_size} taille de lot, LR {learning_rate}, Reg {regularization}: {accuracy}')
 
-        # Écrire les résultats dans le fichier
-        results_file.write(f"{epochs}, {batch_size}, {accuracy}, {precision}\n")
+                    # Écrire les résultats dans le fichier
+                    results_file.write(f"{epochs}, {batch_size}, {accuracy}, {precision}\n")
 
-        # Mettre à jour les meilleures métriques et le meilleur modèle
-        if accuracy > best_accuracy:
-            best_accuracy = accuracy
-            best_precision = precision
-            best_model = model
-            best_epochs = epochs
-            best_batch_size = batch_size
-
-        # Ajuster les hyperparamètres pour la prochaine itération
-        epochs *= 2  # Double le nombre d'époques
-        batch_size = int(batch_size * 1.5)  # Augmente la taille du lot de 50%
+                    # Mettre à jour les meilleures métriques et le meilleur modèle
+                    if accuracy > best_accuracy:
+                        best_accuracy = accuracy
+                        best_epochs = epochs
+                        best_batch_size = batch_size
 
 # Utiliser le meilleur modèle trouvé
 model = best_model
@@ -103,5 +104,4 @@ predicted_number = np.argmax(predictions, axis=1)[0]
 print('Meilleur taux de réussite atteint :', best_accuracy)
 print('Meilleur nombre d\'époques :', best_epochs)
 print('Meilleure taille de lot :', best_batch_size)
-print('Meilleure précision :', best_precision)
 print('Prédiction du prochain numéro :', predicted_number)
