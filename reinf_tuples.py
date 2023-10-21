@@ -1,3 +1,10 @@
+import os
+import sys
+
+# Rediriger la sortie standard (stdout) vers un fichier
+output_file = open('output.log', 'w')
+sys.stdout = output_file
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -108,3 +115,7 @@ print('Meilleur taux de réussite atteint :', best_accuracy)
 print('Meilleur learning rate :', best_learning_rate)
 print('Meilleure régularisation :', best_regularization)
 print('Prédiction du prochain numéro :', predicted_number)
+
+# Restaurer la sortie standard à la fin du programme
+sys.stdout = sys.__stdout__
+output_file.close()
