@@ -56,14 +56,11 @@ def create_tui_window(stdscr):
                 # Fermez le fichier temporaire
                 temp_file.close()
 
-                # Lire la sortie du fichier temporaire
+                # Lire la sortie du fichier temporaire et l'afficher ligne par ligne
                 with open(temp_filename, "r") as output_file:
-                    output_lines = output_file.readlines()
-
-                # Affichez la sortie dans la fenêtre de droite
-                for i, line in enumerate(output_lines):
-                    right_win.addstr(3 + i, 2, line.strip(), curses.color_pair(2))
-                right_win.refresh()
+                    for i, line in enumerate(output_file):
+                        right_win.addstr(3 + i, 2, line.strip(), curses.color_pair(2))
+                        right_win.refresh()
 
                 # Supprimez le fichier temporaire
                 os.remove(temp_filename)
