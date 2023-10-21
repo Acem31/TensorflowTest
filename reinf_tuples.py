@@ -97,12 +97,14 @@ with open("results.txt", "a") as results_file:
 model = best_model
 
 # Prendre la dernière ligne du CSV comme entrée pour la prédiction
-last_line = data.iloc[-1, :5].values.reshape(1, seq_length, 5)
+last_line_data = data.iloc[-1, :5].values
+last_line = last_line_data.reshape(1, seq_length, 5)
 
 # Prédire les prochains numéros basés sur la dernière ligne
 predictions = model.predict(last_line)
 predicted_number = np.argmax(predictions, axis=1)[0]
+
 print('Meilleur taux de réussite atteint :', best_accuracy)
-print('Meilleur nombre d\'époques :', best_epochs)
-print('Meilleure taille de lot :', best_batch_size)
+print('Meilleur learning rate :', best_learning_rate)
+print('Meilleure régularisation :', best_regularization)
 print('Prédiction du prochain numéro :', predicted_number)
