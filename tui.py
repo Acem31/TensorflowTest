@@ -12,12 +12,12 @@ def create_tui_window(stdscr):
 
     # Fenêtre de gauche
     left_window = stdscr.subwin(sh, sw * 2 // 3, 0, 0)
-    left_window.box()
+    left_window.border()  # Affiche une bordure
     left_window.addstr(2, 2, "Appuyez sur 'F' pour lancer le programme")
 
     # Fenêtre de droite
     right_window = stdscr.subwin(sh, sw // 3, 0, sw * 2 // 3)
-    right_window.box()
+    right_window.border()  # Affiche une bordure
     right_window.addstr(2, 2, "Hyperparamètres en cours d'utilisation:")
     right_window.addstr(4, 2, "Taux de réussite en cours: 0.0")
 
