@@ -70,7 +70,7 @@ def create_tui_window(stdscr):
     curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLACK)
 
     # Créer une fenêtre à gauche (2/3 de largeur)
-    left_win = stdscr.subwin(curses.LINES, curses.COLS // 3, 0, 0)
+    left_win = stdscr.subwin(curses.LINES, curses.COLS // 3 - 2, 0, 0)
     left_win.bkgd(' ', curses.color_pair(1))  # Arrière-plan en blanc sur bleu
     left_win.box()
 
@@ -82,7 +82,7 @@ def create_tui_window(stdscr):
     left_win.addstr(5, 2, "Appuyez sur C pour arrêter le programme", curses.color_pair(2))
 
     # Créer une fenêtre à droite (1/3 de largeur)
-    right_win = stdscr.subwin(curses.LINES, 2 * (curses.COLS // 3), 0, curses.COLS // 3)
+    right_win = stdscr.subwin(curses.LINES, 2 * (curses.COLS // 3 - 2), 0, curses.COLS // 3 + 2)
     right_win.bkgd(' ', curses.color_pair(2))  # Arrière-plan en blanc sur noir
     right_win.box()
 
