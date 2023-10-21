@@ -34,8 +34,9 @@ def create_tui_window(stdscr):
 
     # Créer une sous-fenêtre dans la fenêtre de droite pour le terminal virtuel
     max_y, max_x = right_win.getmaxyx()
-    terminal_win = right_win.subwin(max_y - 2, max_x - 2, 2, 2)
+    terminal_win = right_win.subwin(max_y - 12, max_x - 2, 2, 2)  # Ajustez la taille ici
     terminal_win.scrollok(1)  # Activer le défilement automatique
+
 
     # Mettre à jour l'affichage
     stdscr.refresh()
