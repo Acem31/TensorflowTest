@@ -31,6 +31,12 @@ def create_tui_window(stdscr):
     right_win.bkgd(' ', curses.color_pair(2))  # Arrière-plan en blanc sur noir
     right_win.box()
 
+    # Créer une sous-fenêtre dans la fenêtre de droite pour le terminal virtuel
+    terminal_height = max_y - 5  # Ajustez la taille ici
+    terminal_width = max_x - 4  # Ajustez la taille ici
+    terminal_win = right_win.subwin(terminal_height, terminal_width, 2, 2)
+    terminal_win.scrollok(1)  # Activer le défilement automatique
+
     # Mettre à jour l'affichage
     stdscr.refresh()
     left_win.refresh()
