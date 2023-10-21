@@ -69,8 +69,10 @@ def create_tui_window(stdscr):
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
     curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLACK)
 
-    # Créer une fenêtre à gauche (2/3 de largeur)
-    left_win = stdscr.subwin(curses.LINES, curses.COLS // 3 - 2, 0, 0)
+    margin_width = 2  # Définissez la largeur de la marge (2 caractères)
+    
+    # Créez la fenêtre left_win avec des marges à gauche et à droite
+    left_win = stdscr.subwin(curses.LINES, (curses.COLS // 3) - (2 * margin_width), 0, margin_width)
     left_win.bkgd(' ', curses.color_pair(1))  # Arrière-plan en blanc sur bleu
     left_win.box()
 
