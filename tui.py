@@ -3,7 +3,6 @@ import subprocess
 import os
 import sys
 import pty
-import time
 
 # Fonction pour afficher la fenêtre TUI
 def create_tui_window(stdscr):
@@ -32,12 +31,6 @@ def create_tui_window(stdscr):
     right_win.bkgd(' ', curses.color_pair(2))  # Arrière-plan en blanc sur noir
     right_win.box()
 
-    # Créer une sous-fenêtre dans la fenêtre de droite pour le terminal virtuel
-    max_y, max_x = right_win.getmaxyx()
-    terminal_win = right_win.subwin(max_y - 12, max_x - 2, 2, 2)  # Ajustez la taille ici
-    terminal_win.scrollok(1)  # Activer le défilement automatique
-
-
     # Mettre à jour l'affichage
     stdscr.refresh()
     left_win.refresh()
@@ -51,17 +44,38 @@ def create_tui_window(stdscr):
             right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
             right_win.refresh()
 
-            # Exécution du programme dans la sous-fenêtre du terminal virtuel
-            terminal_master, _ = pty.openpty()
+            # Obtenir la hauteur de la fenêtre de droite
+            max_y, max_x = right_win.getmaxyx()
+
+            # Utiliser un terminal virtuel pour exécuter le script
+            master, slave = pty.openpty()
             cmd = ["python3.10", "reinf_tuples.py"]
-            p = subprocess.Popen(cmd, stdout=terminal_master, stderr=terminal_master, stdin=terminal_master, shell=False, universal_newlines=True)
-            
-            # Lecture et affichage de la sortie du programme dans la sous-fenêtre
-            while p.poll() is None:
-                output = os.read(terminal_master, 1024).decode("utf-8")
-                terminal_win.addstr(output, curses.color_pair(2))
-                terminal_win.refresh()
-                time.sleep(0.1)  # Ajout d'un délai pour éviter de surcharger la boucle
+            p = subprocess.Popen(cmd, stdout=slave, stderr=slave, preexec_fn=lambda: curses.resizeterm(max_y, curses.COLS // 3))
+
+            # Lire la sortie du terminal virtuel et afficher dans la fenêtre de droite
+            first_line = True  # Pour suivre la première ligne
+            lines = []  # Liste pour stocker les lignes à afficher
+            while True:
+                try:
+                    output = os.read(master, 1024).decode("utf-8")
+                    if not output:
+                        break
+                    if first_line:
+                        right_win.addstr(1, 2, " " * (curses.COLS // 3 - 4), curses.color_pair(2))
+                        first_line = False 
+                    lines.append(output)
+                    if len(lines) > max_y - 6:
+                        # Si le nombre de lignes dépasse la hauteur de la fenêtre, faire défiler
+                        lines.pop(0)
+                    right_win.clear()
+                    for i, line in enumerate(lines):
+                        right_win.addstr(2 + i, 2, line.strip(), curses.color_pair(2))
+                    right_win.refresh()
+                except OSError:
+                    break
+
+            # Attendre la fin du programme
+            p.wait()
 
         elif key in (ord('q'), ord('Q')):
             break
