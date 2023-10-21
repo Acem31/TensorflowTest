@@ -1,5 +1,6 @@
 import urwid
 import subprocess
+import curses  # Ajoutez cette ligne pour importer le module curses
 
 # Fonction pour créer une fenêtre TUI
 def create_tui_window(stdscr):
