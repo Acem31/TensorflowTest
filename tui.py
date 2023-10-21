@@ -31,6 +31,9 @@ def create_tui_window(stdscr):
     right_win.bkgd(' ', curses.color_pair(2))  # Arrière-plan en blanc sur noir
     right_win.box()
 
+    # Obtenir la hauteur de la fenêtre de droite
+    max_y, max_x = right_win.getmaxyx()
+
     # Créer une sous-fenêtre dans la fenêtre de droite pour le terminal virtuel
     terminal_height = max_y - 5  # Ajustez la taille ici
     terminal_width = max_x - 4  # Ajustez la taille ici
