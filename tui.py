@@ -9,29 +9,29 @@ import tensorflow as tf
 from sklearn.preprocessing import OneHotEncoder
 import urwid
 
-# Charger les données CSV et prétraiter
-data = pd.read_csv('euromillions.csv', sep=';', header=None)
-
-if data.shape[1] < 5:
-    print("Le CSV doit avoir au moins 5 colonnes.")
-    exit()
-
-data = data.iloc[:, :5]  # Garder seulement les 5 premières colonnes
-data.columns = [f'Num{i + 1}' for i in range(5)]  # Renommer les colonnes
-
-# Fonction pour préparer les séquences
-def prepare_sequences(data, seq_length):
-    sequences = []
-    targets = []
-    for i in range(len(data) - seq_length):
-        seq = data.iloc[i:i + seq_length]
-        label = data.iloc[i + seq_length]['Num1']
-        sequences.append(seq.values)
-        targets.append(label)
-    return np.array(sequences), np.array(targets)
-
 # Fonction pour exécuter votre programme
 def run_program():
+    # Charger les données CSV et prétraiter
+    data = pd.read_csv('euromillions.csv', sep=';', header=None)
+
+    if data.shape[1] < 5:
+        print("Le CSV doit avoir au moins 5 colonnes.")
+        exit()
+
+    data = data.iloc[:, :5]  # Garder seulement les 5 premières colonnes
+    data.columns = [f'Num{i + 1}' for i in range(5)]  # Renommer les colonnes
+
+    # Fonction pour préparer les séquences
+    def prepare_sequences(data, seq_length):
+        sequences = []
+        targets = []
+        for i in range(len(data) - seq_length):
+            seq = data.iloc[i:i + seq_length]
+            label = data.iloc[i + seq_length]['Num1']
+            sequences.append(seq.values)
+            targets.append(label)
+        return np.array(sequences), np.array(targets)
+
     # Paramètres initiaux
     best_accuracy = 0.0
     best_epochs = 0
@@ -84,7 +84,7 @@ def run_program():
 
                         # Évaluer le modèle
                         accuracy = accuracy_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1))
-                        precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1), average='weighted')
+                        precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis, average='weighted')
 
                         # Écrire les résultats dans le fichier
                         results_file.write(f"{epochs}, {batch_size}, {accuracy}, {precision}\n")
@@ -101,14 +101,19 @@ def run_program():
     return best_epochs, best_batch_size, best_learning_rate, best_regularization, best_accuracy
 
 # Fonction pour créer une fenêtre TUI
-def create_tui_window():
+def create_tui_window(best_epochs, best_batch_size, best_learning_rate, best_regularization, best_accuracy):
     # Partie gauche : Affichage du programme
     program_text = urwid.Text("Programme en cours d'exécution...")
     program_frame = urwid.Frame(program_text)
 
     # Partie droite : Affichage des hyperparamètres et du taux de réussite
-    hyperparams_text = urwid.Text("Hyperparamètres en cours d'utilisation:")
-    accuracy_text = urwid.Text("Taux de réussite en cours: 0.0")
+    hyperparams_text = urwid.Text(f"Hyperparamètres en cours d'utilisation:\n"
+                                  f"Meilleur nombre d'époques: {best_epochs}\n"
+                                  f"Meilleure taille de lot: {best_batch_size}\n"
+                                  f"Meilleur learning rate: {best_learning_rate}\n"
+                                  f"Meilleure régularisation: {best_regularization}")
+
+    accuracy_text = urwid.Text(f"Taux de réussite en cours: {best_accuracy}")
 
     right_pile = urwid.Pile([hyperparams_text, accuracy_text])
     right_frame = urwid.Frame(right_pile)
@@ -128,4 +133,4 @@ def exit_on_q(key):
 # Exécution de la fenêtre TUI
 if __name__ == "__main__":
     best_epochs, best_batch_size, best_learning_rate, best_regularization, best_accuracy = run_program()
-    create_tui_window()
+    create_tui_window(best_epochs, best_batch_size, best_learning_rate, best_regularization, best_accuracy)
