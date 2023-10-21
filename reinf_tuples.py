@@ -5,6 +5,7 @@ from sklearn.metrics import accuracy_score, precision_score
 from tensorflow.keras.layers import Input, Dense, Flatten
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
 from sklearn.preprocessing import OneHotEncoder
 
 # Charger les données CSV et prétraiter
