@@ -53,6 +53,7 @@ def create_tui_window(stdscr):
                 # Attendez que le programme se termine
                 process.wait()
 
+                # Fermez le fichier temporaire
                 temp_file.close()
 
                 # Lire la sortie du fichier temporaire
