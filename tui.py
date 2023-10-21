@@ -50,7 +50,8 @@ def create_tui_window(stdscr):
             # Utiliser un terminal virtuel pour exécuter le script
             master, slave = pty.openpty()
             cmd = ["python3.10", "reinf_tuples.py"]
-            p = subprocess.Popen(cmd, stdout=slave, stderr=slave, preexec_fn=lambda: curses.resizeterm(max_y, curses.COLS // 3))
+            #p = subprocess.Popen(cmd, stdout=slave, stderr=slave, preexec_fn=lambda: curses.resizeterm(max_y, curses.COLS // 3))
+            p = subprocess.Popen(cmd, stdout=slave, stderr=slave)
 
             # Lire la sortie du terminal virtuel et afficher dans la fenêtre de droite
             first_line = True  # Pour suivre la première ligne
