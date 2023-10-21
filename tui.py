@@ -43,8 +43,7 @@ def create_tui_window(stdscr):
             
             # Exécutez votre script ici (remplacez la commande par votre script)
             try:
-                output = subprocess.check_output(["python3.10", "reinf_tuples.py"])
-                right_win.addstr(3, 2, "Programme terminé.", curses.color_pair(2))
+                subprocess.Popen(["python3.10", "reinf_tuples.py"], stdout=right_win)
             except subprocess.CalledProcessError as e:
                 right_win.addstr(3, 2, f"Erreur : {e}", curses.color_pair(2))
             right_win.refresh()
