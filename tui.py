@@ -54,6 +54,7 @@ def create_tui_window(stdscr):
 
             # Lire la sortie du terminal virtuel et afficher dans la fenêtre de droite
             first_line = True  # Pour suivre la première ligne
+            lines = []  # Liste pour stocker les lignes à afficher
             while True:
                 try:
                     output = os.read(master, 1024).decode("utf-8")
@@ -61,8 +62,14 @@ def create_tui_window(stdscr):
                         break
                     if first_line:
                         right_win.addstr(1, 2, " " * (curses.COLS // 3 - 4), curses.color_pair(2))
-                        first_line = False
-                    right_win.addstr(3, 2, output, curses.color_pair(2))
+                        first_line = False 
+                    lines.append(output)
+                    if len(lines) > max_y - 3:
+                        # Si le nombre de lignes dépasse la hauteur de la fenêtre, faire défiler
+                        lines.pop(0)
+                    right_win.clear()
+                    for i, line in enumerate(lines):
+                        right_win.addstr(2 + i, 2, line.strip(), curses.color_pair(2))
                     right_win.refresh()
                 except OSError:
                     break
