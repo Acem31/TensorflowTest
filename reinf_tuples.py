@@ -1,10 +1,4 @@
 import os
-import sys
-
-# Rediriger la sortie standard (stdout) vers un fichier
-output_file = open('output.log', 'w')
-sys.stdout = output_file
-
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -14,6 +8,11 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 from sklearn.preprocessing import OneHotEncoder
+
+# Rediriger la sortie standard de TensorFlow vers "nulle"
+tf.autodiff.logger.set_verbosity(3)  # Pour réduire la verbosité
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Pour ignorer les messages INFO et WARNING
+tf.autodiff.logger._get_op_logger().set_verbosity(3)
 
 # Charger les données CSV et prétraiter
 data = pd.read_csv('euromillions.csv', sep=';', header=None)
