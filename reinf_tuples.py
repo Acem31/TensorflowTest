@@ -96,14 +96,6 @@ with open("results.txt", "a") as results_file:
                     # Écrire les résultats dans le fichier
                     results_file.write(f"{epochs}, {batch_size}, {accuracy}, {precision}\n")
 
-                    # Enregistrer les résultats dans le fichier training_results.txt
-                    with open("training_results.txt", "w") as results_file:
-                        results_file.write(f"Epochs: {epochs}\n")
-                        results_file.write(f"Batch Size: {batch_size}\n")
-                        results_file.write(f"Learning Rate: {learning_rate}\n")
-                        results_file.write(f"Regularization: {regularization}\n")
-                        results_file.write(f"Accuracy: {accuracy}\n")
-
                     # Mettre à jour les meilleures métriques et le meilleur modèle
                     if accuracy > best_accuracy:
                         best_accuracy = accuracy
