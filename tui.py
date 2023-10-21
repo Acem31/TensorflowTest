@@ -27,6 +27,11 @@ def create_tui_window():
     # Conteneur global
     columns = urwid.Columns([program_frame, right_frame], dividechars=1)
 
+    # Fonction pour quitter le TUI en appuyant sur 'q'
+    def exit_on_q(key):
+        if key in ('q', 'Q'):
+            raise urwid.ExitMainLoop()
+
     # Créer la boucle principale urwid
     main_loop = urwid.MainLoop(columns, unhandled_input=exit_on_q)
 
