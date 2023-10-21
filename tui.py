@@ -13,22 +13,27 @@ def run_program(key):
 
 # Fonction pour créer une fenêtre TUI
 def create_tui_window():
-    # Partie gauche : Instructions
-    instructions_text = urwid.Text("Appuyez sur la touche 'F' pour lancer le programme.")
-    instructions_text = urwid.Padding(instructions_text, align='left')
-    instructions_text = urwid.AttrMap(instructions_text, 'body')
+    # Partie gauche : Affichage du programme
+    program_text = urwid.Text("Programme en cours d'exécution...")
+    program_frame = urwid.Frame(program_text)
 
-    # Partie droite : Affichage du programme
-    global text_widget
-    text_widget = urwid.Text("Attente de l'exécution du programme...")
-    text_widget = urwid.Filler(text_widget)
+    # Partie droite : Affichage des hyperparamètres et du taux de réussite
+    hyperparams_text = urwid.Text("Hyperparamètres en cours d'utilisation:")
+    accuracy_text = urwid.Text("Taux de réussite en cours: 0.0")
+
+    right_pile = urwid.Pile([hyperparams_text, accuracy_text])
+    right_frame = urwid.Frame(right_pile)
 
     # Conteneur global
-    columns = urwid.Columns([instructions_text, text_widget], dividechars=1)
+    columns = urwid.Columns([program_frame, right_frame], dividechars=1)
 
     # Créer la boucle principale urwid
-    main_loop = urwid.MainLoop(columns, unhandled_input=run_program)
-    main_loop.run()
+    main_loop = urwid.MainLoop(columns, unhandled_input=exit_on_q)
+
+    try:
+        main_loop.run()
+    except Exception as e:
+        print(f"Erreur dans la boucle principale Urwid : {e}")
 
 # Exécution de la fenêtre TUI
 if __name__ == "__main__":
