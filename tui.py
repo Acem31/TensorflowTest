@@ -9,8 +9,8 @@ def create_tui_window(stdscr):
 
     # Activer les couleurs
     curses.start_color()
-    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Couleur des bordures
-    curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)  # Couleur du texte
+    curses.init_pair(1, curses.COLOR_RED, curses.COLOR_BLACK)  # Couleur des bordures (rouge sur noir)
+    curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Couleur du texte (blanc sur noir)
 
     # Taille de l'écran
     sh, sw = stdscr.getmaxyx()
