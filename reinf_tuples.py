@@ -1,4 +1,5 @@
 import os
+import csv
 
 # Définir la variable d'environnement TF_ENABLE_ONEDNN_OPTS sur 0
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
@@ -54,9 +55,10 @@ param_grid = {
     'regularization': [0.001, 0.01, 0.1]
 }
 
-# Créer un fichier de résultats
-with open("results.txt", "a") as results_file:
-    results_file.write("Epochs, Batch Size, Accuracy, Precision\n")
+# Créer un fichier de résultats (en mode écriture, supprimant le contenu précédent)
+with open("results.csv", "w", newline='') as results_file:
+    csv_writer = csv.writer(results_file)
+    csv_writer.writerow(["Epochs", "Batch Size", "Learning Rate", "Regularization", "Accuracy", "Precision"])
 
     for epochs in param_grid['epochs']:
         for batch_size in param_grid['batch_size']:
@@ -93,8 +95,8 @@ with open("results.txt", "a") as results_file:
                     precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1), average='weighted')
                     print(f'Taux de réussite avec {epochs} époques, {batch_size} taille de lot, LR {learning_rate}, Reg {regularization}: {accuracy}')
 
-                    # Écrire les résultats dans le fichier
-                    results_file.write(f"{epochs}, {batch_size}, {accuracy}, {precision}\n")
+                    # Écrire les résultats dans le fichier CSV
+                    csv_writer.writerow([epochs, batch_size, learning_rate, regularization, accuracy, precision])
 
                     # Mettre à jour les meilleures métriques et le meilleur modèle
                     if accuracy > best_accuracy:
@@ -114,10 +116,6 @@ predictions = model.predict(last_line)
 predicted_number = np.argmax(predictions, axis=1)[0]
 
 print('Meilleur taux de réussite atteint :', best_accuracy)
-print('Meilleur learning rate :', best_learning_rate)
-print('Meilleure régularisation :', best_regularization)
+print('Meilleur nombre d\'époques :', best_epochs)
+print('Meilleure taille de lot :', best_batch_size)
 print('Prédiction du prochain numéro :', predicted_number)
-
-# Restaurer la sortie standard à la fin du programme
-sys.stdout = sys.__stdout__
-output_file.close()
