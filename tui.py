@@ -1,5 +1,7 @@
 import curses
 import subprocess
+import tempfile
+import os
 
 # Fonction pour afficher la fenêtre TUI
 def create_tui_window(stdscr):
@@ -40,13 +42,30 @@ def create_tui_window(stdscr):
             # Lancer le programme ici
             right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
             right_win.refresh()
-            
-            # Exécutez votre script ici (remplacez la commande par votre script)
-            try:
-                subprocess.Popen(["python3.10", "reinf_tuples.py"], stdout=right_win)
-            except subprocess.CalledProcessError as e:
-                right_win.addstr(3, 2, f"Erreur : {e}", curses.color_pair(2))
-            right_win.refresh()
+
+            # Créer un fichier temporaire pour capturer la sortie du programme
+            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                temp_filename = temp_file.name
+                temp_file.close()
+
+                # Exécutez votre script ici en redirigeant la sortie vers le fichier temporaire
+                process = subprocess.Popen(["python3.10", "reinf_tuples.py"], stdout=temp_filename, stderr=temp_filename)
+
+                # Attendez que le programme se termine
+                process.wait()
+
+                # Lire la sortie du fichier temporaire
+                with open(temp_filename, "r") as output_file:
+                    output_lines = output_file.readlines()
+                
+                # Affichez la sortie dans la fenêtre de droite
+                for i, line in enumerate(output_lines):
+                    right_win.addstr(3 + i, 2, line.strip(), curses.color_pair(2))
+                right_win.refresh()
+
+                # Supprimez le fichier temporaire
+                os.remove(temp_filename)
+
         elif key in (ord('q'), ord('Q')):
             break
 
