@@ -1,127 +1,91 @@
+import curses
+import subprocess
 import os
+import sys
+import pty
 
-# Définir la variable d'environnement TF_ENABLE_ONEDNN_OPTS sur 0
-os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
-os.environ['CUDA_VISIBLE_DEVICES'] = ''
+# Fonction pour afficher la fenêtre TUI
+def create_tui_window(stdscr):
+    # Démarrer la bibliothèque curses
+    curses.curs_set(0)  # Masquer le curseur
+    stdscr.clear()       # Effacer l'écran
 
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score
-from tensorflow.keras.layers import Input, Dense, Flatten
-from tensorflow.keras.models import Model
-from tensorflow.keras.optimizers import Adam
-import tensorflow as tf
-from sklearn.preprocessing import OneHotEncoder
+    # Activer le mode de clavier spécial pour gérer les touches spéciales
+    stdscr.keypad(1)
 
-# Ignorer les messages d'erreur TensorFlow
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    # Initialiser les couleurs si le terminal le permet
+    curses.start_color()
+    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
+    curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLACK)
 
-# Charger les données CSV et prétraiter
-data = pd.read_csv('euromillions.csv', sep=';', header=None)
+    # Créer une fenêtre à gauche (2/3 de largeur)
+    left_win = stdscr.subwin(curses.LINES, curses.COLS // 3, 0, 0)
+    left_win.bkgd(' ', curses.color_pair(1))  # Arrière-plan en blanc sur bleu
+    left_win.box()
 
-if data.shape1 < 5:
-    print("Le CSV doit avoir au moins 5 colonnes.")
-    exit()
+    # Ajouter un bouton "Appuyez sur F pour lancer le programme" dans la fenêtre de gauche
+    left_win.addstr(1, 2, "Appuyez sur F pour lancer le programme", curses.color_pair(2))
 
-data = data.iloc[:, :5]  # Garder seulement les 5 premières colonnes
-data.columns = [f'Num{i + 1}' for i in range(5)]  # Renommer les colonnes
+    # Créer une fenêtre à droite (1/3 de largeur)
+    right_win = stdscr.subwin(curses.LINES, 2 * (curses.COLS // 3), 0, curses.COLS // 3)
+    right_win.bkgd(' ', curses.color_pair(2))  # Arrière-plan en blanc sur noir
+    right_win.box()
 
-# Fonction pour préparer les séquences
-def prepare_sequences(data, seq_length):
-    sequences = []
-    targets = []
-    for i in range(len(data) - seq_length):
-        seq = data.iloc[i:i + seq_length]
-        label = data.iloc[i + seq_length]['Num1']
-        sequences.append(seq.values)
-        targets.append(label)
-    return np.array(sequences), np.array(targets)
+    # Mettre à jour l'affichage
+    stdscr.refresh()
+    left_win.refresh()
+    right_win.refresh()
 
-# Paramètres initiaux
-best_accuracy = 0.0
-best_precision = 0.0
-best_model = None
-best_epochs = 0
-best_batch_size = 0
-target_accuracy = 0.20  # Nouvelle cible de précision (20 %)
+    # Attente de l'appui sur la touche 'F' pour lancer le programme
+    while True:
+        key = stdscr.getch()
+        if key == ord('F') or key == ord('f'):
+            # Lancer le programme ici
+            right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
+            right_win.refresh()
 
-# Hyperparamètres à explorer
-param_grid = {
-    'epochs': [5120, 10240, 20480],
-    'batch_size': [1228, 2456, 4912],
-    'learning_rate': [0.001, 0.01, 0.1],
-    'regularization': [0.001, 0.01, 0.1]
-}
+            # Obtenir la hauteur de la fenêtre de droite
+            max_y, max_x = right_win.getmaxyx()
 
-# Créer un fichier de résultats (en mode écriture, supprimant le contenu précédent)
-with open("results.txt", "w") as results_file:
-    results_file.write("Epochs, Batch Size, Accuracy, Precision\n")
+            # Utiliser un terminal virtuel pour exécuter le script
+            master, slave = pty.openpty()
+            cmd = ["python3.10", "reinf_tuples.py"]
+            p = subprocess.Popen(cmd, stdout=slave, stderr=slave, preexec_fn=lambda: curses.resizeterm(max_y, curses.COLS // 3))
 
-    for epochs in param_grid['epochs']:
-        for batch_size in param_grid['batch_size']:
-            for learning_rate in param_grid['learning_rate']:
-                for regularization in param_grid['regularization']:
-                    # Préparer les séquences pour l'entraînement
-                    seq_length = 10  # Vous pouvez choisir la longueur que vous préférez
-                    X, y = prepare_sequences(data, seq_length)
+            # Lire la sortie du terminal virtuel et afficher dans la fenêtre de droite
+            first_line = True  # Pour suivre la première ligne
+            lines = []  # Liste pour stocker les lignes à afficher
+            while True:
+                try:
+                    output = os.read(master, 1024).decode("utf-8")
+                    if not output:
+                        break
+                    if first_line:
+                        right_win.addstr(1, 2, " " * (curses.COLS // 3 - 4), curses.color_pair(2))
+                        first_line = False 
+                    lines.append(output)
+                    if len(lines) > max_y - 6:
+                        # Si le nombre de lignes dépasse la hauteur de la fenêtre, faire défiler
+                        lines.pop(0)
+                    right_win.clear()
+                    for i, line in enumerate(lines):
+                        right_win.addstr(2 + i, 2, line.strip(), curses.color_pair(2))
+                    right_win.refresh()
+                except OSError:
+                    break
 
-                    # Diviser les données en ensembles d'entraînement et de test
-                    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            # Attendre la fin du programme
+            p.wait()
 
-                    # Créer un modèle de régression logistique multinomiale
-                    input_layer = Input(shape=(seq_length, 5))
-                    flatten = Flatten()(input_layer)
-                    output_layer = Dense(34, activation='softmax', kernel_regularizer=tf.keras.regularizers.l2(regularization))(flatten)
+        elif key in (ord('q'), ord('Q')):
+            break
 
-                    model = Model(inputs=input_layer, outputs=output_layer)
-                    model.compile(optimizer=Adam(learning_rate=learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
+    # Désactiver le mode de clavier spécial avant de quitter
+    stdscr.keypad(0)
 
-                    # Créer un encodeur one-hot pour les étiquettes
-                    encoder = OneHotEncoder(sparse=False)
-                    y_train_encoded = encoder.fit_transform(y_train.reshape(-1, 1))
-                    y_test_encoded = encoder.transform(y_test.reshape(-1, 1))
+    # Restaurer les paramètres du terminal
+    curses.endwin()
 
-                    # Entraîner le modèle
-                    model.fit(X_train, y_train_encoded, epochs=epochs, batch_size=batch_size, verbose=1)
-
-                    # Prédire sur les données de test
-                    predictions = model.predict(X_test)
-
-                    # Évaluer le modèle
-                    accuracy = accuracy_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1))
-                    precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1), average='weighted')
-                    print(f'Taux de réussite avec {epochs} époques, {batch_size} taille de lot, LR {learning_rate}, Reg {regularization}: {accuracy}')
-
-                    # Écrire les résultats dans le fichier (en mode écriture, remplaçant le contenu précédent)
-                    results_file.write(f"{epochs}, {batch_size}, {accuracy}, {precision}\n")
-
-                    # Enregistrer les résultats dans le fichier training_results.txt (en mode écriture, remplaçant le contenu précédent)
-                    with open("training_results.txt", "w") as results_file:
-                        results_file.write(f"Epochs: {epochs}\n")
-                        results_file.write(f"Batch Size: {batch_size}\n")
-                        results_file.write(f"Learning Rate: {learning_rate}\n")
-                        results_file.write(f"Regularization: {regularization}\n")
-                        results_file.write(f"Accuracy: {accuracy}\n")
-
-                    # Mettre à jour les meilleures métriques et le meilleur modèle
-                    if accuracy > best_accuracy:
-                        best_accuracy = accuracy
-                        best_epochs = epochs
-                        best_batch_size = batch_size
-
-# Utiliser le meilleur modèle trouvé
-model = best_model
-
-# Prendre la dernière ligne du CSV comme entrée pour la prédiction
-last_line_data = data.iloc[-1, :5].values
-last_line = last_line_data.reshape(1, seq_length, 5)
-
-# Prédire les prochains numéros basés sur la dernière ligne
-predictions = model.predict(last_line)
-predicted_number = np.argmax(predictions, axis=1)[0]
-
-print('Meilleur taux de réussite atteint :', best_accuracy)
-print('Meilleur learning rate :', best_learning_rate)
-print('Meilleure régularisation :', best_regularization)
-print('Prédiction du prochain numéro :', predicted_number)
+# Exécuter la fenêtre TUI
+if __name__ == "__main__":
+    curses.wrapper(create_tui_window)
