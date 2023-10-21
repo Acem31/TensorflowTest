@@ -7,6 +7,9 @@ def create_tui_window(stdscr):
     curses.curs_set(0)  # Masquer le curseur
     stdscr.clear()       # Effacer l'écran
 
+    # Activer le mode de clavier spécial pour gérer les touches spéciales
+    stdscr.keypad(1)
+
     # Initialiser les couleurs si le terminal le permet
     curses.start_color()
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
@@ -47,6 +50,9 @@ def create_tui_window(stdscr):
             right_win.refresh()
         elif key in (ord('q'), ord('Q')):
             break
+
+    # Désactiver le mode de clavier spécial avant de quitter
+    stdscr.keypad(0)
 
     # Restaurer les paramètres du terminal
     curses.endwin()
