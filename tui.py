@@ -13,7 +13,7 @@ def create_tui_window(stdscr):
     global program_running  # Utilisez la variable globale
 
     def start_program():
-        nonlocal program_running
+        global program_running
         program_running = True
         right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
         right_win.refresh()
