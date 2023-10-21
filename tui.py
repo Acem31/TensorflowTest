@@ -68,12 +68,10 @@ def create_tui_window(stdscr):
     curses.start_color()
     curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
     curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLACK)
-
-    margin_width = 2  # Définissez la largeur de la marge (2 caractères)
     
     # Créez la fenêtre left_win avec des marges à gauche et à droite
-    left_win = stdscr.subwin(curses.LINES, (curses.COLS // 3) - (2 * margin_width), 0, margin_width)
-    left_win.bkgd(' ', curses.color_pair(1))  # Arrière-plan en blanc sur bleu
+    left_win = stdscr.subwin(curses.LINES, curses.COLS // 3 - 2, 0, 0)
+    left_win.bkgd(' ', curses.color_pair(1))
     left_win.box()
 
     # Ajouter un bouton "Appuyez sur F pour lancer le programme" dans la fenêtre de gauche
