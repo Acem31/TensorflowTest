@@ -9,10 +9,8 @@ from tensorflow.keras.optimizers import Adam
 import tensorflow as tf
 from sklearn.preprocessing import OneHotEncoder
 
-# Rediriger la sortie standard de TensorFlow vers "nulle"
-tf.autodiff.logger.set_verbosity(3)  # Pour réduire la verbosité
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Pour ignorer les messages INFO et WARNING
-tf.autodiff.logger._get_op_logger().set_verbosity(3)
+# Ignorer les messages d'erreur TensorFlow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 # Charger les données CSV et prétraiter
 data = pd.read_csv('euromillions.csv', sep=';', header=None)
