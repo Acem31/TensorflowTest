@@ -36,6 +36,8 @@ def create_tui_window(stdscr):
     left_win.refresh()
     right_win.refresh()
 
+    display_results = False  # Variable pour afficher les résultats
+
     # Attente de l'appui sur la touche 'F' pour lancer le programme
     while True:
         key = stdscr.getch()
@@ -76,8 +78,20 @@ def create_tui_window(stdscr):
 
             # Attendre la fin du programme
             p.wait()
+            display_results = True  # Activer l'affichage des résultats après l'exécution
 
-        elif key in (ord('q'), ord('Q')):
+        if display_results:
+            # Lire et afficher les résultats depuis le fichier training_results.txt
+            try:
+                with open("training_results.txt", "r") as results_file:
+                    results = results_file.read()
+                    left_win.addstr(2, 2, results, curses.color_pair(1))
+                    left_win.refresh()
+            except FileNotFoundError:
+                left_win.addstr(2, 2, "Fichier de résultats introuvable.", curses.color_pair(1))
+                left_win.refresh()
+
+        if key in (ord('q'), ord('Q')):
             break
 
     # Désactiver le mode de clavier spécial avant de quitter
