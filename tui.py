@@ -2,6 +2,7 @@ import curses
 import subprocess
 import os
 import sys
+import pty
 
 # Fonction pour afficher la fenêtre TUI
 def create_tui_window(stdscr):
@@ -43,14 +44,24 @@ def create_tui_window(stdscr):
             right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
             right_win.refresh()
 
-            # Rediriger la sortie standard vers la fenêtre de droite de curses
-            sys.stdout = right_win
+            # Utiliser un terminal virtuel pour exécuter le script
+            master, slave = pty.openpty()
+            cmd = ["python3.10", "reinf_tuples.py"]
+            p = subprocess.Popen(cmd, stdout=slave, stderr=slave)
 
-            # Exécutez votre script ici
-            subprocess.call(["python3.10", "reinf_tuples.py"])
+            # Lire la sortie du terminal virtuel et afficher dans la fenêtre de droite
+            while True:
+                try:
+                    output = os.read(master, 1024).decode("utf-8")
+                    if not output:
+                        break
+                    right_win.addstr(3, 2, output, curses.color_pair(2))
+                    right_win.refresh()
+                except OSError:
+                    break
 
-            # Rétablir la sortie standard
-            sys.stdout = sys.__stdout__
+            # Attendre la fin du programme
+            p.wait()
 
         elif key in (ord('q'), ord('Q')):
             break
