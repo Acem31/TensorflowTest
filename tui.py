@@ -46,18 +46,19 @@ def create_tui_window(stdscr):
             # Créer un fichier temporaire pour capturer la sortie du programme
             with tempfile.NamedTemporaryFile(delete=False) as temp_file:
                 temp_filename = temp_file.name
-                temp_file.close()
 
                 # Exécutez votre script ici en redirigeant la sortie vers le fichier temporaire
-                process = subprocess.Popen(["python3.10", "reinf_tuples.py"], stdout=temp_filename, stderr=temp_filename)
+                process = subprocess.Popen(["python3.10", "reinf_tuples.py"], stdout=temp_file, stderr=temp_file)
 
                 # Attendez que le programme se termine
                 process.wait()
 
+                temp_file.close()
+
                 # Lire la sortie du fichier temporaire
                 with open(temp_filename, "r") as output_file:
                     output_lines = output_file.readlines()
-                
+
                 # Affichez la sortie dans la fenêtre de droite
                 for i, line in enumerate(output_lines):
                     right_win.addstr(3 + i, 2, line.strip(), curses.color_pair(2))
