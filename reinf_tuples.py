@@ -1,4 +1,8 @@
 import os
+
+# Définir la variable d'environnement TF_ENABLE_ONEDNN_OPTS sur 0
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
