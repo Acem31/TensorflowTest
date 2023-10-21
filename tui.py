@@ -64,7 +64,7 @@ def create_tui_window(stdscr):
                         right_win.addstr(1, 2, " " * (curses.COLS // 3 - 4), curses.color_pair(2))
                         first_line = False 
                     lines.append(output)
-                    if len(lines) > max_y - 3:
+                    if len(lines) > max_y - 6:
                         # Si le nombre de lignes dépasse la hauteur de la fenêtre, faire défiler
                         lines.pop(0)
                     right_win.clear()
