@@ -1,35 +1,39 @@
-import urwid
+import curses
 import subprocess
-import curses  # Ajoutez cette ligne pour importer le module curses
 
-# Fonction pour créer une fenêtre TUI
 def create_tui_window(stdscr):
-    # Partie gauche : Affichage du programme
-    program_text = urwid.Text("Programme en cours d'exécution...")
-    program_frame = urwid.Frame(program_text)
+    # Initialisation de Curses
+    stdscr.clear()
+    curses.curs_set(0)
+    stdscr.refresh()
 
-    # Partie droite : Affichage des hyperparamètres et du taux de réussite
-    hyperparams_text = urwid.Text("Hyperparamètres en cours d'utilisation:")
-    accuracy_text = urwid.Text("Taux de réussite en cours: 0.0")
+    # Taille de l'écran
+    sh, sw = stdscr.getmaxyx()
 
-    right_pile = urwid.Pile([hyperparams_text, accuracy_text])
-    right_frame = urwid.Frame(right_pile)
+    # Fenêtre de gauche
+    left_window = stdscr.subwin(sh, sw * 2 // 3, 0, 0)
+    left_window.box()
+    left_window.addstr(2, 2, "Appuyez sur 'F' pour lancer le programme")
 
-    # Conteneur global
-    columns = urwid.Columns([program_frame, right_frame], dividechars=1)
+    # Fenêtre de droite
+    right_window = stdscr.subwin(sh, sw // 3, 0, sw * 2 // 3)
+    right_window.box()
+    right_window.addstr(2, 2, "Hyperparamètres en cours d'utilisation:")
+    right_window.addstr(4, 2, "Taux de réussite en cours: 0.0")
 
-    # Créer la boucle principale urwid
-    main_loop = urwid.MainLoop(columns, unhandled_input=exit_on_q)
-    
-    main_loop.run()
+    # Rafraîchir l'écran
+    stdscr.refresh()
 
-# Fonction pour quitter le TUI en appuyant sur 'q' ou 'Q'
-def exit_on_q(key):
-    if key in ('q', 'Q'):
-        raise urwid.ExitMainLoop()
+    # Attendre l'entrée de l'utilisateur
+    while True:
+        key = stdscr.getch()
+        if key == ord('q') or key == ord('Q'):
+            break
+        elif key == ord('F') or key == ord('f'):
+            execute_program()
+
+def execute_program():
+    subprocess.run(["python3.10", "reinf_tuples.py"])
 
 if __name__ == "__main__":
     curses.wrapper(create_tui_window)
-    # Exécuter le script Python "reinf_tuples.py" lorsque F est pressé
-    if key == 'F':
-        output = subprocess.check_output(["python3.10", "reinf_tuples.py"])
