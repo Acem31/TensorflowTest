@@ -16,10 +16,16 @@ program_running = False
 # Variable pour la hauteur du tableau
 table_height = 12
 
-# Créez une fonction pour mettre à jour le tableau avec des données actuelles
-def update_table(table, data):
+def update_table(table, data, header):
+    # Effacer le contenu actuel du tableau
+    table.erase()
+
     # Assurez-vous que le nombre de lignes à mettre à jour ne dépasse pas la taille du tableau
     rows_to_update = min(len(data), table_height)
+
+    # Réafficher les en-têtes du tableau
+    for i, col_name in enumerate(header):
+        table.addstr(i * 2, 1, col_name, curses.color_pair(2))
 
     # Mettez à jour le tableau avec les données
     for i in range(rows_to_update):
@@ -122,8 +128,10 @@ def create_tui_window(stdscr):
         csv_reader = csv.reader(csvfile)
         data = list(csv_reader)
         if len(data) >= 2:
-            row = data[-1]
-            update_table(table, row)
+            header = data[0]  # Récupérer le header depuis la première ligne
+            row = data[-1]  # Récupérer les données depuis la dernière ligne
+            update_table(table, row, header)  # Passer le header à la fonction
+
 
     stdscr.refresh()
     left_win.refresh()
