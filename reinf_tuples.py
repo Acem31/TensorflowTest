@@ -89,10 +89,11 @@ trials = Trials()
 best = fmin(fn=evaluate_model, space=space, algo=tpe.suggest, max_evals=100, trials=trials)
 
 # Extraire les meilleurs hyperparamètres
-best_epochs = param_grid['epochs'][best['epochs']]
-best_batch_size = param_grid['batch_size'][best['batch_size']]
+best_epochs = space['epochs'][best['epochs']]
+best_batch_size = space['batch_size'][best['batch_size']]
 best_learning_rate = best['learning_rate']
 best_regularization = best['regularization']
+
 
 # Utiliser les meilleurs hyperparamètres pour entraîner le modèle
 best_params = {
