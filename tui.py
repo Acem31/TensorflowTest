@@ -89,6 +89,17 @@ def create_tui_window(stdscr):
     right_win.bkgd(' ', curses.color_pair(2))  # Arrière-plan en blanc sur noir
     right_win.box()
 
+    # Créer le tableau de 12 lignes au bas de la fenêtre de gauche
+    table_height = 12
+    table_width = curses.COLS // 3 - 6  # Largeur du tableau
+    table_start_y = curses.LINES - table_height - 2  # Position en Y pour le tableau
+    table_start_x = 3  # Marge à gauche pour le tableau
+    table = left_win.subwin(table_height, table_width, table_start_y, table_start_x)
+
+    # Remplir le tableau avec des lignes vides
+    for i in range(table_height):
+        table.addstr(i, 0, " " * (table_width - 2), curses.color_pair(2))
+
     # Mettre à jour l'affichage
     stdscr.refresh()
     left_win.refresh()
