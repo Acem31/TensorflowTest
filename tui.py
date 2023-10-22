@@ -168,7 +168,10 @@ def create_tui_window(stdscr):
             left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
             left_win.refresh()
         elif key in (ord('q'), ord('Q')):
+            if program_running:
+                stop_program()  # Arrêtez le programme avant de quitter le TUI
             break
+
 
     stdscr.keypad(0)
     curses.endwin()
