@@ -102,10 +102,10 @@ def create_tui_window(stdscr):
         # Assurez-vous que le fichier CSV a au moins 2 lignes (header + données)
         if len(data) >= 2:
         # Récupérer le header depuis la première ligne
-        header = data[0]
+            header = data[0]
         
         # Récupérer les données depuis la dernière ligne
-        row = data[-1]
+            row = data[-1]
     
         # Remplir le tableau avec les données du header et de la dernière ligne
         for i in range(len(header)):
