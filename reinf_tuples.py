@@ -1,167 +1,118 @@
-import curses
-import subprocess
-import os
-import pty
-import signal
-import csv
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-import time
+# Définir la variable d'environnement TF_ENABLE_ONEDNN_OPTS sur 0
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
-# Variables pour suivre l'état du programme
-program_running = False
-table_data = []
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score
+from tensorflow.keras.layers import Input, Dense, Flatten
+from tensorflow.keras.models import Model
+from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
+from sklearn.preprocessing import OneHotEncoder
 
-# Hauteur du tableau
-table_height = 12
-# En-têtes de tableau par défaut
-table_headers = ["Epochs", "Batch Size", "Learning Rate", "Regularization", "Accuracy", "Precision"]
+# Ignorer les messages d'erreur TensorFlow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-def update_table(table, data):
-    # Effacer le contenu actuel du tableau
-    table.clear()
+# Charger les données CSV et prétraiter
+data = pd.read_csv('euromillions.csv', sep=';', header=None)
 
-    # Afficher les en-têtes du tableau
-    for i, col_name in enumerate(table_headers):
-        table.addstr(i * 2, 1, col_name, curses.color_pair(2))
+if data.shape[1] < 5:
+    print("Le CSV doit avoir au moins 5 colonnes.")
+    exit()
 
-    # Mettez à jour le tableau avec les données
-    for i, row_data in enumerate(data):
-        table.addstr(i * 2 + 1, 1, row_data, curses.color_pair(2))
+data = data.iloc[:, :5]  # Garder seulement les 5 premières colonnes
+data.columns = [f'Num{i + 1}' for i in range(5)]  # Renommer les colonnes
 
-    table.refresh()
+# Fonction pour préparer les séquences
+def prepare_sequences(data, seq_length):
+    sequences = []
+    targets = []
+    for i in range(len(data) - seq_length):
+        seq = data.iloc[i:i + seq_length]
+        label = data.iloc[i + seq_length]['Num1']
+        sequences.append(seq.values)
+        targets.append(label)
+    return np.array(sequences), np.array(targets)
 
-# Créez une classe de gestionnaire d'événements pour surveiller le fichier CSV
-class CSVHandler(FileSystemEventHandler):
-    def __init__(self, table):
-        self.table = table
+# Paramètres initiaux
+best_accuracy = 0.0
+best_precision = 0.0
+best_model = None
+best_epochs = 0
+best_batch_size = 0
+target_accuracy = 0.20  # Nouvelle cible de précision (20 %)
 
-    def on_modified(self, event):
-        if event.src_path == 'results.csv':
-            # Ajoutez une pause pour la synchronisation
-            time.sleep(0.1)
+# Hyperparamètres à explorer
+param_grid = {
+    'epochs': [5120, 10240, 20480],
+    'batch_size': [1228, 2456, 4912],
+    'learning_rate': [0.001, 0.01, 0.1],
+    'regularization': [0.001, 0.01, 0.1]
+}
 
-            # Charger les données actuelles du fichier CSV
-            with open('results.csv', newline='') as csvfile:
-                csv_reader = csv.reader(csvfile)
-                data = list(csv_reader)
-                if data:
-                    row = data[-1]  # Récupérer les données depuis la dernière ligne
-                else:
-                    row = ["0"] * len(table_headers)  # Remplacer les données vides par des zéros
-                update_table(self.table, row)
-                table_data.clear()
-                table_data.extend(data)
+# Créer un fichier de résultats (en mode écriture, supprimant le contenu précédent)
+with open("results.csv", "w", newline='') as results_file:
+    csv_writer = csv.writer(results_file)
+    csv_writer.writerow(["Epochs", "Batch Size", "Learning Rate", "Regularization", "Accuracy", "Precision"])
 
-# Fonction pour afficher la fenêtre TUI
-def create_tui_window(stdscr):
-    global program_running
+    for epochs in param_grid['epochs']:
+        for batch_size in param_grid['batch_size']:
+            for learning_rate in param_grid['learning_rate']:
+                for regularization in param_grid['regularization']:
+                    # Préparer les séquences pour l'entraînement
+                    seq_length = 10  # Vous pouvez choisir la longueur que vous préférez
+                    X, y = prepare_sequences(data, seq_length)
 
-    def start_program():
-        global program_running
-        program_running = True
-        right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
-        right_win.refresh()
+                    # Diviser les données en ensembles d'entraînement et de test
+                    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        max_y, max_x = right_win.getmaxyx()
+                    # Créer un modèle de régression logistique multinomiale
+                    input_layer = Input(shape=(seq_length, 5))
+                    flatten = Flatten()(input_layer)
+                    output_layer = Dense(34, activation='softmax', kernel_regularizer=tf.keras.regularizers.l2(regularization))(flatten)
 
-        master, slave = pty.openpty()
-        cmd = ["python3.10", "reinf_tuples.py"]
-        process = subprocess.Popen(
-            cmd, stdout=slave, stderr=slave, preexec_fn=lambda: curses.resizeterm(max_y, curses.COLS // 3)
-        )
+                    model = Model(inputs=input_layer, outputs=output_layer)
+                    model.compile(optimizer=Adam(learning_rate=learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
 
-        first_line = True
-        lines = []
-        while True:
-            try:
-                output = os.read(master, 1024).decode("utf-8")
-                if not output:
-                    break
-                if first_line:
-                    right_win.addstr(1, 2, " " * (curses.COLS // 3 - 4), curses.color_pair(2))
-                    first_line = False
-                lines.append(output)
-                if len(lines) > max_y - 8:
-                    lines.pop(0)
-                right_win.clear()
-                for i, line in enumerate(lines):
-                    right_win.addstr(2 + i, 2, line.strip(), curses.color_pair(2))
-                right_win.refresh()
-            except OSError:
-                break
+                    # Créer un encodeur one-hot pour les étiquettes
+                    encoder = OneHotEncoder(sparse=False)
+                    y_train_encoded = encoder.fit_transform(y_train.reshape(-1, 1))
+                    y_test_encoded = encoder.transform(y_test.reshape(-1, 1))
 
-        process.wait()
-        program_running = False
+                    # Entraîner le modèle
+                    model.fit(X_train, y_train_encoded, epochs=epochs, batch_size=batch_size, verbose=1)
 
-    def stop_program():
-        global program_running
-        if program_running:
-            try:
-                p.terminate()
-            except ProcessLookupError:
-                pass
+                    # Prédire sur les données de test
+                    predictions = model.predict(X_test)
 
-    curses.curs_set(0)
-    stdscr.clear()
-    stdscr.keypad(1)
+                    # Évaluer le modèle
+                    accuracy = accuracy_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1))
+                    precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1), average='weighted')
+                    print(f'Taux de réussite avec {epochs} époques, {batch_size} taille de lot, LR {learning_rate}, Reg {regularization}: {accuracy}')
 
-    curses.start_color()
-    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
-    curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLACK)
+                    # Écrire les résultats dans le fichier CSV
+                    csv_writer.writerow([epochs, batch_size, learning_rate, regularization, accuracy, precision])
 
-    left_win = stdscr.subwin(curses.LINES, curses.COLS // 3 - 2, 0, 0)
-    left_win.bkgd(' ', curses.color_pair(1))
-    left_win.box()
+                    # Mettre à jour les meilleures métriques et le meilleur modèle
+                    if accuracy > best_accuracy:
+                        best_accuracy = accuracy
+                        best_epochs = epochs
+                        best_batch_size = batch_size
 
-    # Ajouter du texte centré avec fond bleu
-    text_centered = "Appuyez sur F pour lancer le programme"
-    left_win.addstr(1, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
+# Utiliser le meilleur modèle trouvé
+model = best_model
 
-    # Ajouter du texte centré avec fond bleu et blanc
-    text_centered = "État du programme: En attente"
-    left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
+# Prendre la dernière ligne du CSV comme entrée pour la prédiction
+last_line_data = data.iloc[-1, :5].values
+last_line = last_line_data.reshape(1, seq_length, 5)
 
-    # Modifier la couleur du texte "Appuyez sur C pour arrêter le programme" et centrer
-    text_centered = "Appuyez sur C pour arrêter le programme"
-    left_win.addstr(3, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
+# Prédire les prochains numéros basés sur la dernière ligne
+predictions = model.predict(last_line)
+predicted_number = np.argmax(predictions, axis=1)[0]
 
-    right_win = stdscr.subwin(curses.LINES, 2 * (curses.COLS // 3 - 2), 0, curses.COLS // 3 + 2)
-    right_win.bkgd(' ', curses.color_pair(2))
-    right_win.box()
-
-    # Créer un tableau initial avec les en-têtes
-    table_width = curses.COLS // 3 - 6
-    table_start_y = curses.LINES - table_height - 2
-    table_start_x = 3
-    table = left_win.subwin(table_height, table_width, table_start_y, table_start_x)
-
-    # Créer un observateur watchdog pour surveiller les modifications du fichier CSV
-    observer = Observer()
-    observer.schedule(CSVHandler(table), path='.', recursive=False)
-    observer.start()
-
-    stdscr.refresh()
-    left_win.refresh()
-    right_win.refresh()
-
-    while True:
-        key = stdscr.getch()
-        if key == ord('F') or key == ord('f'):
-            start_program()
-            text_centered = "État du programme: En cours d'exécution"
-            left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
-            left_win.refresh()
-        elif key == ord('C') or key == ord('c'):
-            stop_program()
-            text_centered = "État du programme: Arrêté"
-            left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
-            left_win.refresh()
-        elif key in (ord('q'), ord('Q')):
-            break
-
-    stdscr.keypad(0)
-    curses.endwin()
-
-if __name__ == "__main__":
-    curses.wrapper(create_tui_window)
+print('Meilleur taux de réussite atteint :', best_accuracy)
+print('Meilleur nombre d\'époques :', best_epochs)
+print('Meilleure taille de lot :', best_batch_size)
+print('Prédiction du prochain numéro :', predicted_number)
