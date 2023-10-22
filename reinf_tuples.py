@@ -6,6 +6,7 @@ import signal
 import csv
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import time
 
 # Variables pour suivre l'état du programme
 program_running = False
@@ -37,6 +38,9 @@ class CSVHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if event.src_path == 'results.csv':
+            # Ajoutez une pause pour la synchronisation
+            time.sleep(0.1)
+
             # Charger les données actuelles du fichier CSV
             with open('results.csv', newline='') as csvfile:
                 csv_reader = csv.reader(csvfile)
