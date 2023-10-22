@@ -7,6 +7,7 @@ import csv
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import time
+import threading
 
 # Variables pour suivre l'état du programme
 program_running = False
@@ -53,54 +54,56 @@ class CSVHandler(FileSystemEventHandler):
                 table_data.clear()
                 table_data.extend(data)
 
+# Fonction pour lancer le programme
+def start_program():
+    global program_running
+    program_running = True
+    right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
+    right_win.refresh()
+
+    max_y, max_x = right_win.getmaxyx()
+
+    master, slave = pty.openpty()
+    cmd = ["python3.10", "reinf_tuples.py"]
+    process = subprocess.Popen(
+        cmd, stdout=slave, stderr=slave, preexec_fn=lambda: curses.resizeterm(max_y, curses.COLS // 3)
+    )
+
+    first_line = True
+    lines = []
+    while True:
+        try:
+            output = os.read(master, 1024).decode("utf-8")
+            if not output:
+                break
+            if first_line:
+                right_win.addstr(1, 2, " " * (curses.COLS // 3 - 4), curses.color_pair(2))
+                first_line = False
+            lines.append(output)
+            if len(lines) > max_y - 8:
+                lines.pop(0)
+            right_win.clear()
+            for i, line in enumerate(lines):
+                right_win.addstr(2 + i, 2, line.strip(), curses.color_pair(2))
+            right_win.refresh()
+        except OSError:
+            break
+
+    process.wait()
+    program_running = False
+
+# Fonction pour arrêter le programme
+def stop_program():
+    global program_running
+    if program_running:
+        try:
+            p.terminate()
+        except ProcessLookupError:
+            pass
+
 # Fonction pour afficher la fenêtre TUI
 def create_tui_window(stdscr):
     global program_running
-
-    def start_program():
-        global program_running
-        program_running = True
-        right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
-        right_win.refresh()
-
-        max_y, max_x = right_win.getmaxyx()
-
-        master, slave = pty.openpty()
-        cmd = ["python3.10", "reinf_tuples.py"]
-        process = subprocess.Popen(
-            cmd, stdout=slave, stderr=slave, preexec_fn=lambda: curses.resizeterm(max_y, curses.COLS // 3)
-        )
-
-        first_line = True
-        lines = []
-        while True:
-            try:
-                output = os.read(master, 1024).decode("utf-8")
-                if not output:
-                    break
-                if first_line:
-                    right_win.addstr(1, 2, " " * (curses.COLS // 3 - 4), curses.color_pair(2))
-                    first_line = False
-                lines.append(output)
-                if len(lines) > max_y - 8:
-                    lines.pop(0)
-                right_win.clear()
-                for i, line in enumerate(lines):
-                    right_win.addstr(2 + i, 2, line.strip(), curses.color_pair(2))
-                right_win.refresh()
-            except OSError:
-                break
-
-        process.wait()
-        program_running = False
-
-    def stop_program():
-        global program_running
-        if program_running:
-            try:
-                p.terminate()
-            except ProcessLookupError:
-                pass
 
     curses.curs_set(0)
     stdscr.clear()
@@ -148,10 +151,13 @@ def create_tui_window(stdscr):
     while True:
         key = stdscr.getch()
         if key == ord('F') or key == ord('f'):
-            start_program()
-            text_centered = "État du programme: En cours d'exécution"
-            left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
-            left_win.refresh()
+            if not program_running:
+                # Démarrer le programme dans un thread
+                program_thread = threading.Thread(target=start_program)
+                program_thread.start()
+                text_centered = "État du programme: En cours d'exécution"
+                left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
+                left_win.refresh()
         elif key == ord('C') or key == ord('c'):
             stop_program()
             text_centered = "État du programme: Arrêté"
