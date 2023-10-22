@@ -16,6 +16,8 @@ program_running = False
 # Variable pour la hauteur du tableau
 table_height = 12
 
+p = None  # Variable globale pour le processus
+
 def update_table(table, data, header):
     # Effacer le contenu actuel du tableau
     table.erase()
@@ -45,15 +47,16 @@ class CSVHandler(FileSystemEventHandler):
                 csv_reader = csv.reader(csvfile)
                 data = list(csv_reader)
                 if len(data) >= 2:
-                    row = data[-1]
-                    update_table(self.table, row)
+                    header = data[0]  # Récupérer le header depuis la première ligne
+                    row = data[-1]  # Récupérer les données depuis la dernière ligne
+                    update_table(self.table, row, header)  # Passer le header à la fonction
 
 # Fonction pour afficher la fenêtre TUI
 def create_tui_window(stdscr):
-    global program_running
+    global program_running, p
 
     def start_program():
-        global program_running
+        global program_running, p
         program_running = True
         right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
         right_win.refresh()
@@ -88,8 +91,10 @@ def create_tui_window(stdscr):
         program_running = False
 
     def stop_program():
+        global program_running, p
         if program_running:
-            p.send_signal(signal.SIGINT)
+            if p:
+                p.send_signal(signal.SIGINT)
 
     curses.curs_set(0)
     stdscr.clear()
@@ -103,16 +108,17 @@ def create_tui_window(stdscr):
     left_win.bkgd(' ', curses.color_pair(1))
     left_win.box()
 
-    left_win.addstr(1, 2, "Appuyez sur F pour lancer le programme", curses.color_pair(2))
-
-    left_win.addstr(3, 2, "État du programme: En attente", curses.color_pair(2))
-    left_win.addstr(5, 2, "Appuyez sur C pour arrêter le programme", curses.color_pair(2))
+    # Ajouter du texte centré avec fond bleu
+    left_win.addstr(1, (curses.COLS // 3 - len("Appuyez sur F pour lancer le programme")) // 2, "Appuyez sur F pour lancer le programme", curses.color_pair(1))
+    left_win.addstr(2, (curses.COLS // 3 - len("État du programme: En attente")) // 2, "État du programme: En attente", curses.color_pair(1))
+    
+    left_win.addstr(3, 2, "Appuyez sur C pour arrêter le programme", curses.color_pair(1))
 
     right_win = stdscr.subwin(curses.LINES, 2 * (curses.COLS // 3 - 2), 0, curses.COLS // 3 + 2)
     right_win.bkgd(' ', curses.color_pair(2))
     right_win.box()
 
-    table_height = 12
+    # Créer un tableau initial avec les en-têtes
     table_width = curses.COLS // 3 - 6
     table_start_y = curses.LINES - table_height - 2
     table_start_x = 3
@@ -123,16 +129,6 @@ def create_tui_window(stdscr):
     observer.schedule(CSVHandler(table), path='.', recursive=False)
     observer.start()
 
-    # Charger les données initiales du fichier CSV
-    with open('results.csv', newline='') as csvfile:
-        csv_reader = csv.reader(csvfile)
-        data = list(csv_reader)
-        if len(data) >= 2:
-            header = data[0]  # Récupérer le header depuis la première ligne
-            row = data[-1]  # Récupérer les données depuis la dernière ligne
-            update_table(table, row, header)  # Passer le header à la fonction
-
-
     stdscr.refresh()
     left_win.refresh()
     right_win.refresh()
@@ -141,12 +137,12 @@ def create_tui_window(stdscr):
         key = stdscr.getch()
         if key == ord('F') or key == ord('f'):
             start_program()
-            left_win.addstr(3, 2, "État du programme: En cours d'exécution", curses.color_pair(2))
+            left_win.addstr(3, 2, "État du programme: En cours d'exécution", curses.color_pair(1))
             left_win.refresh()
 
         elif key == ord('C') or key == ord('c'):
             stop_program()
-            left_win.addstr(3, 2, "État du programme: Arrêté", curses.color_pair(2))
+            left_win.addstr(3, 2, "État du programme: Arrêté", curses.color_pair(1))
             left_win.refresh()
 
         elif key in (ord('q'), ord('Q')):
