@@ -1,6 +1,3 @@
-Il s'agit des deux premières lignes.
-Il faut que dans ce code:
-
 import curses
 import subprocess
 import os
