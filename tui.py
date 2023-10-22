@@ -162,6 +162,12 @@ def create_tui_window(stdscr):
                 text_centered = "État du programme: En cours d'exécution"
                 left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
                 left_win.refresh()
+            elif program_running:
+                # Annuler le démarrage du programme si en cours d'exécution
+                stop_program()
+                text_centered = "État du programme: Arrêté"
+                left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
+                left_win.refresh()
         elif key == ord('C') or key == ord('c'):
             stop_program()
             text_centered = "État du programme: Arrêté"
