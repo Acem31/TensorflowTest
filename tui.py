@@ -52,9 +52,7 @@ class CSVHandler(FileSystemEventHandler):
                 table_data.clear()
                 table_data.extend(data)
 
-
-# Fonction pour démarrer le programme dans un thread
-def start_program():
+def start_program(right_win):
     global program_running
     program_running = True
     right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
@@ -106,8 +104,7 @@ def create_tui_window(stdscr):
     def run_program():
         if not program_running:
             # Démarrer le programme dans un thread
-            global program_thread
-            program_thread = threading.Thread(target=start_program)
+            program_thread = threading.Thread(target=start_program, args=(right_win,))
             program_thread.start()
             text_centered = "État du programme: En cours d'exécution"
             left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
