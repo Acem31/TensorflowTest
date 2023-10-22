@@ -4,22 +4,19 @@ import os
 import pty
 import signal
 import csv
+import threading
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-import time
-import threading
 
 # Variables pour suivre l'état du programme
 program_running = False
 table_data = []
+program_thread = None  # Référence au thread du programme
 
 # Hauteur du tableau
 table_height = 12
 # En-têtes de tableau par défaut
 table_headers = ["Epochs", "Batch Size", "Learning Rate", "Regularization", "Accuracy", "Precision"]
-
-# Define right_win as a global variable
-right_win = None
 
 def update_table(table, data):
     # Effacer le contenu actuel du tableau
@@ -42,9 +39,6 @@ class CSVHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if event.src_path == 'results.csv':
-            # Ajoutez une pause pour la synchronisation
-            time.sleep(0.1)
-
             # Charger les données actuelles du fichier CSV
             with open('results.csv', newline='') as csvfile:
                 csv_reader = csv.reader(csvfile)
@@ -57,7 +51,7 @@ class CSVHandler(FileSystemEventHandler):
                 table_data.clear()
                 table_data.extend(data)
 
-# Fonction pour lancer le programme
+# Fonction pour démarrer le programme dans un thread
 def start_program():
     global program_running
     program_running = True
@@ -98,16 +92,57 @@ def start_program():
 # Fonction pour arrêter le programme
 def stop_program():
     global program_running
-    if program_running:
-        try:
-            p.terminate()
-        except ProcessLookupError:
-            pass
+    if program_running and program_thread is not None:
+        program_thread.join()  # Attendez que le thread du programme se termine
+        program_thread = None
+        program_running = False
 
 # Fonction pour afficher la fenêtre TUI
 def create_tui_window(stdscr):
-    global program_running
-    global right_win
+    global program_running, program_thread, right_win
+
+    def on_f4_key():
+        if program_running:
+            stop_program()
+        curses.endwin()  # Quitte le TUI
+        os._exit(0)
+
+    def start_program():
+        nonlocal program_running, right_win
+        program_running = True
+        right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
+        right_win.refresh()
+
+        max_y, max_x = right_win.getmaxyx()
+
+        master, slave = pty.openpty()
+        cmd = ["python3.10", "reinf_tuples.py"]
+        process = subprocess.Popen(
+            cmd, stdout=slave, stderr=slave, preexec_fn=lambda: curses.resizeterm(max_y, curses.COLS // 3)
+        )
+
+        first_line = True
+        lines = []
+        while True:
+            try:
+                output = os.read(master, 1024).decode("utf-8")
+                if not output:
+                    break
+                if first_line:
+                    right_win.addstr(1, 2, " " * (curses.COLS // 3 - 4), curses.color_pair(2))
+                    first_line = False
+                lines.append(output)
+                if len(lines) > max_y - 8:
+                    lines.pop(0)
+                right_win.clear()
+                for i, line in enumerate(lines):
+                    right_win.addstr(2 + i, 2, line.strip(), curses.color_pair(2))
+                right_win.refresh()
+            except OSError:
+                break
+
+        process.wait()
+        program_running = False
 
     curses.curs_set(0)
     stdscr.clear()
@@ -129,8 +164,8 @@ def create_tui_window(stdscr):
     text_centered = "État du programme: En attente"
     left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
 
-    # Modifier la couleur du texte "Appuyez sur C pour arrêter le programme" et centrer
-    text_centered = "Appuyez sur C pour arrêter le programme"
+    # Modifier la couleur du texte "Appuyez sur F4 pour quitter" et centrer
+    text_centered = "Appuyez sur F4 pour quitter"
     left_win.addstr(3, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
 
     right_win = stdscr.subwin(curses.LINES, 2 * (curses.COLS // 3 - 2), 0, curses.COLS // 3 + 2)
@@ -162,25 +197,6 @@ def create_tui_window(stdscr):
                 text_centered = "État du programme: En cours d'exécution"
                 left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
                 left_win.refresh()
-            elif program_running:
-                # Annuler le démarrage du programme si en cours d'exécution
-                stop_program()
-                text_centered = "État du programme: Arrêté"
-                left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
-                left_win.refresh()
-        elif key == ord('C') or key == ord('c'):
-            stop_program()
-            text_centered = "État du programme: Arrêté"
-            left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
-            left_win.refresh()
-        elif key in (ord('q'), ord('Q')):
-            if program_running:
-                stop_program()  # Arrêtez le programme avant de quitter le TUI
-            break
-
-
-    stdscr.keypad(0)
-    curses.endwin()
 
 if __name__ == "__main__":
     curses.wrapper(create_tui_window)
