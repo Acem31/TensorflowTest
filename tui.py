@@ -1,10 +1,12 @@
+Il s'agit des deux premières lignes.
+Il faut que dans ce code:
+
 import curses
 import subprocess
 import os
 import sys
 import pty
 import signal  # Ajouter cette ligne pour gérer l'arrêt du programme
-import csv
 
 # Variable pour suivre si le programme est en cours d'exécution
 program_running = False
@@ -74,16 +76,6 @@ def create_tui_window(stdscr):
     left_win = stdscr.subwin(curses.LINES, curses.COLS // 3 - 2, 0, 0)
     left_win.bkgd(' ', curses.color_pair(1))
     left_win.box()
-
-    # Lecture du contenu du CSV et affichage dans la fenêtre de gauche
-    try:
-        with open('results.csv', 'r') as csv_file:
-            csv_reader = csv.reader(csv_file)
-            for row in csv_reader:
-                left_win.addstr(1, 2, ', '.join(row), curses.color_pair(2))
-    except FileNotFoundError:
-        # Si le fichier n'existe pas, affichez des valeurs par défaut
-        left_win.addstr(1, 2, "Epochs,Batch Size,Learning Rate,Regularization,Accuracy,Precision", curses.color_pair(2))
 
     # Ajouter un bouton "Appuyez sur F pour lancer le programme" dans la fenêtre de gauche
     left_win.addstr(1, 2, "Appuyez sur F pour lancer le programme", curses.color_pair(2))
