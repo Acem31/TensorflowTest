@@ -5,9 +5,37 @@ import sys
 import pty
 import signal  # Ajouter cette ligne pour gérer l'arrêt du programme
 import csv
+import threading
+import time
 
 # Variable pour suivre si le programme est en cours d'exécution
 program_running = False
+
+# Créez une fonction pour mettre à jour le tableau avec des données actuelles
+def update_table(table, data):
+    # Assurez-vous que le nombre de lignes à mettre à jour ne dépasse pas la taille du tableau
+    rows_to_update = min(len(data), table_height)
+
+    # Mettez à jour le tableau avec les données
+    for i in range(rows_to_update):
+        table.addstr(i * 2 + 1, 1, data[i], curses.color_pair(2))
+
+    table.refresh()
+
+# Créez une fonction pour mettre à jour le tableau en arrière-plan
+def update_table_periodically():
+    while True:
+        # Charger les données actuelles du fichier CSV
+        with open('results.csv', newline='') as csvfile:
+            csv_reader = csv.reader(csvfile)
+            data = list(csv_reader)
+            if len(data) >= 2:
+                row = data[-1]
+                update_table(table, row)
+        
+        # Attendez un certain intervalle avant la prochaine mise à jour
+        time.sleep(5)  # par exemple, mettez à jour toutes les 5 secondes
+
 
 # Fonction pour afficher la fenêtre TUI
 def create_tui_window(stdscr):
@@ -139,6 +167,15 @@ def create_tui_window(stdscr):
 
     # Restaurer les paramètres du terminal
     curses.endwin()
+
+if __name__ == "__main__":
+    # Créez un thread pour mettre à jour le tableau en arrière-plan
+    update_thread = threading.Thread(target=update_table_periodically)
+    update_thread.daemon = True  # Le thread s'exécutera en arrière-plan
+
+    # Démarrer le thread
+    update_thread.start()
+
 
 # Exécuter la fenêtre TUI
 if __name__ == "__main__":
