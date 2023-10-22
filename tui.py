@@ -35,7 +35,7 @@ def update_table(table, data):
 # Créez une classe de gestionnaire d'événements pour surveiller le fichier CSV
 class CSVHandler(FileSystemEventHandler):
     def __init__(self, table):
-        super().__init()
+        super().__init__()
         self.table = table
 
     def on_modified(self, event):
@@ -51,6 +51,7 @@ class CSVHandler(FileSystemEventHandler):
                 update_table(self.table, row)
                 table_data.clear()
                 table_data.extend(data)
+
 
 # Fonction pour démarrer le programme dans un thread
 def start_program():
