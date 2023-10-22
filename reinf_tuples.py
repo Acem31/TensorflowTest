@@ -70,7 +70,7 @@ def evaluate_model(params):
 
     # Évaluer le modèle
     accuracy = accuracy_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1))
-    precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1), average='weighted')
+    precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1), average='weighted', zero_division=0)
 
     return {'loss': -accuracy, 'status': STATUS_OK}
 
