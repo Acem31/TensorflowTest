@@ -1,7 +1,6 @@
 import curses
 import subprocess
 import os
-import sys
 import pty
 import signal
 import csv
@@ -115,10 +114,13 @@ def create_tui_window(stdscr):
     text_centered = "Appuyez sur F pour lancer le programme"
     left_win.addstr(1, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
 
+    # Ajouter du texte centré avec fond bleu et blanc
     text_centered = "État du programme: En attente"
-    left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1)
+    left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
 
-    left_win.addstr(3, 2, "Appuyez sur C pour arrêter le programme", curses.color_pair(2))
+    # Modifier la couleur du texte "Appuyez sur C pour arrêter le programme" et centrer
+    text_centered = "Appuyez sur C pour arrêter le programme"
+    left_win.addstr(3, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
 
     right_win = stdscr.subwin(curses.LINES, 2 * (curses.COLS // 3 - 2), 0, curses.COLS // 3 + 2)
     right_win.bkgd(' ', curses.color_pair(2))
