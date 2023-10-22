@@ -4,6 +4,7 @@ import os
 import sys
 import pty
 import signal  # Ajouter cette ligne pour gérer l'arrêt du programme
+import csv
 
 # Variable pour suivre si le programme est en cours d'exécution
 program_running = False
@@ -93,9 +94,24 @@ def create_tui_window(stdscr):
     table_start_x = 3  # Marge à gauche pour le tableau
     table = left_win.subwin(table_height, table_width, table_start_y, table_start_x)
 
-    # Remplir le tableau avec des lignes vides
-    for i in range(table_height):
-        table.addstr(i, 0, " " * (table_width - 2), curses.color_pair(2))
+    # Charger les données du fichier CSV
+    with open('results.csv', newline='') as csvfile:
+    csv_reader = csv.reader(csvfile)
+    data = list(csv_reader)
+
+    # Assurez-vous que le fichier CSV a au moins 2 lignes (header + données)
+    if len(data) >= 2:
+    # Récupérer le header depuis la première ligne
+    header = data[0]
+    
+    # Récupérer les données depuis la dernière ligne
+    row = data[-1]
+
+    # Remplir le tableau avec les données du header et de la dernière ligne
+    for i in range(len(header)):
+        table.addstr(i * 2, 1, header[i], curses.color_pair(2))
+        table.addstr(i * 2 + 1, 1, row[i], curses.color_pair(2))
+
 
     # Mettre à jour l'affichage
     stdscr.refresh()
