@@ -18,6 +18,9 @@ table_height = 12
 # En-têtes de tableau par défaut
 table_headers = ["Epochs", "Batch Size", "Learning Rate", "Regularization", "Accuracy", "Precision"]
 
+# Define right_win as a global variable
+right_win = None
+
 def update_table(table, data):
     # Effacer le contenu actuel du tableau
     table.clear()
@@ -104,6 +107,7 @@ def stop_program():
 # Fonction pour afficher la fenêtre TUI
 def create_tui_window(stdscr):
     global program_running
+    global right_win
 
     curses.curs_set(0)
     stdscr.clear()
