@@ -7,6 +7,7 @@ import csv
 import threading
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import sys
 
 # Variable globale pour suivre l'état du programme
 program_running = False
