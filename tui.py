@@ -9,6 +9,13 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import sys
 
+def signal_handler(sig, frame):
+    curses.endwin()  # Restaurer l'état du terminal
+    sys.exit(0)
+
+# Définir le gestionnaire de signal pour SIGINT (Ctrl+C)
+signal.signal(signal.SIGINT, signal_handler)
+
 # Variable globale pour suivre l'état du programme
 program_running = False
 table_data = []
