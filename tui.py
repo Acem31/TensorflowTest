@@ -6,6 +6,7 @@ import signal
 import csv
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+import time
 
 # Variables pour suivre l'état du programme
 program_running = False
@@ -13,21 +14,20 @@ table_data = []
 
 # Hauteur du tableau
 table_height = 12
+# En-têtes de tableau par défaut
+table_headers = ["Epochs", "Batch Size", "Learning Rate", "Regularization", "Accuracy", "Precision"]
 
-def update_table(table, data, header):
+def update_table(table, data):
     # Effacer le contenu actuel du tableau
     table.clear()
 
-    # Assurez-vous que le nombre de lignes à mettre à jour ne dépasse pas la taille du tableau
-    rows_to_update = min(len(data), table_height)
-
-    # Réafficher les en-têtes du tableau
-    for i, col_name in enumerate(header):
+    # Afficher les en-têtes du tableau
+    for i, col_name in enumerate(table_headers):
         table.addstr(i * 2, 1, col_name, curses.color_pair(2))
 
     # Mettez à jour le tableau avec les données
-    for i in range(rows_to_update):
-        table.addstr(i * 2 + 1, 1, data[i], curses.color_pair(2))
+    for i, row_data in enumerate(data):
+        table.addstr(i * 2 + 1, 1, row_data, curses.color_pair(2))
 
     table.refresh()
 
@@ -38,16 +38,20 @@ class CSVHandler(FileSystemEventHandler):
 
     def on_modified(self, event):
         if event.src_path == 'results.csv':
+            # Ajoutez une pause pour la synchronisation
+            time.sleep(0.1)
+
             # Charger les données actuelles du fichier CSV
             with open('results.csv', newline='') as csvfile:
                 csv_reader = csv.reader(csvfile)
                 data = list(csv_reader)
-                if len(data) >= 2:
-                    header = data[0]  # Récupérer le header depuis la première ligne
+                if data:
                     row = data[-1]  # Récupérer les données depuis la dernière ligne
-                    update_table(self.table, row, header)  # Passer le header à la fonction
-                    table_data.clear()
-                    table_data.extend(data)
+                else:
+                    row = ["0"] * len(table_headers)  # Remplacer les données vides par des zéros
+                update_table(self.table, row)
+                table_data.clear()
+                table_data.extend(data)
 
 # Fonction pour afficher la fenêtre TUI
 def create_tui_window(stdscr):
