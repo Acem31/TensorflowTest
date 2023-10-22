@@ -13,6 +13,9 @@ from watchdog.events import FileSystemEventHandler
 # Variable pour suivre si le programme est en cours d'exécution
 program_running = False
 
+# Variable pour la hauteur du tableau
+table_height = 12
+
 # Créez une fonction pour mettre à jour le tableau avec des données actuelles
 def update_table(table, data):
     # Assurez-vous que le nombre de lignes à mettre à jour ne dépasse pas la taille du tableau
