@@ -34,8 +34,9 @@ def update_table(table, data):
 
 # Créez une classe de gestionnaire d'événements pour surveiller le fichier CSV
 class CSVHandler(FileSystemEventHandler):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, table):
+        super().__init()
+        self.table = table
 
     def on_modified(self, event):
         if event.src_path == 'results.csv':
