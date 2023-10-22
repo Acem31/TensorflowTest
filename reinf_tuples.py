@@ -58,7 +58,7 @@ def evaluate_model(params):
     model.compile(optimizer=Adam(learning_rate=learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
 
     # Créer un encodeur one-hot pour les étiquettes
-    encoder = OneHotEncoder(sparse=False)
+    encoder = OneHotEncoder(sparse_output=False)
     y_train_encoded = encoder.fit_transform(y_train.reshape(-1, 1))
     y_test_encoded = encoder.transform(y_test.reshape(-1, 1))
 
