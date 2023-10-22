@@ -16,7 +16,7 @@ table_height = 12
 
 def update_table(table, data, header):
     # Effacer le contenu actuel du tableau
-    table.erase()
+    table.clear()
 
     # Assurez-vous que le nombre de lignes à mettre à jour ne dépasse pas la taille du tableau
     rows_to_update = min(len(data), table_height)
