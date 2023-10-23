@@ -1,7 +1,7 @@
 import numpy as np
 from tensorflow import keras
 from data import read_euromillions_data
-from parameter import best_hps  # Importer les meilleurs hyperparamètres depuis parameter.py
+from kerastuner.tuners import RandomSearch
 
 # Charger les données en utilisant la fonction read_euromillions_data
 euromillions_data = read_euromillions_data('euromillions.csv')
@@ -12,37 +12,49 @@ best_accuracy = 0.0
 # Initialisation du nombre d'itérations
 iteration = 0
 
-# Définir une fonction pour prédire un tuple de 5 numéros
-def predict_next_tuple(last_tuple):
-    # Construire le modèle ANN avec les meilleurs hyperparamètres
-    model = keras.Sequential([
-        keras.layers.Dense(best_hps.Int('units', min_value=32, max_value=512, step=32), activation='relu', input_shape=(5,)),
-        keras.layers.Dense(best_hps.Int('units', min_value=32, max_value=512, step=32), activation='relu'),
-        keras.layers.Dense(5)  # 5 sorties pour prédire les 5 numéros
-    ])
-
-    # Compiler le modèle
-    model.compile(optimizer=keras.optimizers.Adam(learning_rate=best_hps.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])),
-                  loss='mse', metrics=['mae'])
-
-    # Entraîner le modèle
-    X = np.array(euromillions_data[:-1])
-    y = np.array(euromillions_data[1:])
-    model.fit(X, y, epochs=50, batch_size=1, verbose=2)
-
-    # Prédire le prochain tuple
-    prediction = model.predict(last_tuple.reshape(1, 5))
-
-    return prediction[0]
-
 while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
 
     # Sélectionner la dernière ligne du CSV
     last_row = np.array(euromillions_data[-1][:5])
 
-    # Prédire le prochain tuple
-    next_tuple = predict_next_tuple(last_row)
+    # Définir une fonction pour prédire un tuple de 5 numéros
+    def predict_next_tuple(last_tuple, hps):
+        # Construire le modèle ANN avec les hyperparamètres actuels
+        model = keras.Sequential([
+            keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation='relu', input_shape=(5,)),
+            keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation='relu'),
+            keras.layers.Dense(5)  # 5 sorties pour prédire les 5 numéros
+        ])
+
+        # Compiler le modèle
+        model.compile(optimizer=keras.optimizers.Adam(learning_rate=hps.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])),
+                      loss='mse', metrics=['mae'])
+
+        # Entraîner le modèle avec le nombre d'epochs actuel
+        X = np.array(euromillions_data[:-1])
+        y = np.array(euromillions_data[1:])
+        model.fit(X, y, epochs=iteration * 50, batch_size=1, verbose=2)
+
+        # Prédire le prochain tuple
+        prediction = model.predict(last_tuple.reshape(1, 5))
+
+        return prediction[0]
+
+    # Créer un tuner Keras pour la recherche d'hyperparamètres
+    tuner = RandomSearch(
+        predict_next_tuple,
+        objective='mae',
+        max_trials=10,
+        directory='my_dir',
+        project_name='my_project'
+    )
+
+    # Chercher les meilleurs hyperparamètres
+    tuner.search(last_row, best_hps)
+
+    # Prédire le prochain tuple en utilisant les meilleurs hyperparamètres actuels
+    next_tuple = predict_next_tuple(last_row, best_hps)
 
     print(f"Itération {iteration} - Prédiction pour le prochain tuple : {next_tuple}")
 
@@ -55,11 +67,5 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
 
     if accuracy > best_accuracy:
         best_accuracy = accuracy
-
-# Prédiction finale
-if best_accuracy >= 0.3:
-    last_row = np.array(euromillions_data[-1][:5])
-    final_prediction = predict_next_tuple(last_row)
-    print(f"Prédiction finale : {final_prediction}")
 
 print("Taux de précision atteint : {0:.2f}".format(best_accuracy))
