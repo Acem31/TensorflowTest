@@ -1,36 +1,59 @@
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error
 import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import GridSearchCV
 
-# Lire le CSV
-data = pd.read_csv('euromillions.csv', sep=';', header=None)
+# Charger le fichier CSV
+data = pd.read_csv('euromilions.csv', delimiter=';', header=None)
+X = data.iloc[:, :-2]  # Sélectionner les 5 premières colonnes
+y = data.iloc[:, -1]  # Dernière colonne à prédire
 
-# Séparer les données en fonction des colonnes d'entrée (X) et des colonnes de sortie (y)
-# X doit contenir les numéros tirés (par exemple, 5 numéros principaux), et y doit contenir les étoiles (par exemple, 2 étoiles).
-X = data.iloc[:, 0:5]
-y = data.iloc[:, 5:7]  # Assurez-vous d'ajuster ces indices en fonction de votre fichier CSV.
+best_accuracy = 0.0
+best_params = {}
 
-# Diviser les données en ensembles d'entraînement et de test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+while best_accuracy < 0.3:
+    # Diviser les données en ensemble d'apprentissage et de test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Créer un modèle RandomForestRegressor avec des hyperparamètres prédéfinis
-model = RandomForestRegressor(n_estimators=100, random_state=42)
+    # Créer un modèle (Random Forest, par exemple)
+    model = RandomForestClassifier()
 
-# Liste pour stocker les prédictions pour chaque colonne
-predictions = []
+    # Définir une grille d'hyperparamètres à rechercher
+    param_grid = {
+        'n_estimators': [10, 50, 100, 200],
+        'max_depth': [None, 10, 20, 30],
+    }
 
-# Entraîner le modèle et faire des prédictions pour chaque colonne
-for col in range(2):  # Nous avons 2 colonnes de sortie (étoiles)
-    model.fit(X_train, y_train.iloc[:, col])
-    y_pred = model.predict(X_test)
-    predictions.append(y_pred)
+    # Utiliser GridSearchCV pour rechercher les meilleurs hyperparamètres
+    grid_search = GridSearchCV(model, param_grid, cv=5)
+    grid_search.fit(X_train, y_train)
 
-# Calculer la précision pour chaque colonne (RMSE)
-accuracies = [mean_squared_error(y_test.iloc[:, col], predictions[col], squared=False) for col in range(2)]
+    # Obtenir les meilleurs hyperparamètres
+    best_model = grid_search.best_estimator_
+    best_params = grid_search.best_params_
 
-# Imprimer les prédictions et précisions pour chaque colonne
-for col in range(2):
-    print(f"Prédiction pour la colonne {col + 5} :", predictions[col])  # Nous commençons l'index à partir de 5
-    print(f"Précision de la prédiction pour la colonne {col + 5} (RMSE) : {accuracies[col]:.2f}")
+    # Faire des prédictions sur l'ensemble de test
+    y_pred = best_model.predict(X_test)
+
+    # Calculer la précision
+    accuracy = accuracy_score(y_test, y_pred)
+
+    if accuracy > best_accuracy:
+        best_accuracy = accuracy
+    else:
+        break
+
+# Si la précision atteint 30% ou plus
+if best_accuracy >= 0.3:
+    # Réentraîner le modèle en incluant la dernière ligne
+    best_model.fit(X, y)
+    last_row = X.iloc[[-1]]
+    prediction = best_model.predict(last_row)
+    print("Dernière ligne du CSV :")
+    print(data.iloc[-1])
+    print("Prédiction pour la dernière ligne : ", prediction[0])
+    print("Taux de précision : ", best_accuracy)
+else:
+    print("La précision maximale n'a pas atteint 30%.")
