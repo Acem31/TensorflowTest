@@ -58,8 +58,10 @@ class CSVHandler(FileSystemEventHandler):
                 update_table(self.table, row)
 
 def start_program(right_win):
-    global program_running
+    global program_running, program_thread
     program_running = True
+    program_thread = threading.Thread(target=start_program, args=(right_win,))
+    program_thread.start()
     right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
     right_win.refresh()
 
