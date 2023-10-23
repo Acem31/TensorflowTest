@@ -25,7 +25,7 @@ while best_accuracy < 30:
     def build_model(hp):
         model = keras.Sequential()
         model.add(layers.Dense(units=hp.Int('units', min_value=32, max_value=512, step=32), activation='relu', input_shape=(X_train.shape[1],)))
-        model.add(layers.Dense(10, activation='softmax'))
+        model.add(layers.Dense(50, activation='softmax'))
         model.compile(optimizer=keras.optimizers.Adam(hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])),
                       loss='sparse_categorical_crossentropy',
                       metrics=['accuracy'])
