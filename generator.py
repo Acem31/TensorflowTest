@@ -58,11 +58,12 @@ while best_accuracy < 30:
     accuracy = accuracy_score(y_test, np.argmax(y_pred, axis=1)) * 100
 
     last_row = data.iloc[-1].values[:-2]
-    prediction = model.predict(np.array([last_row]))[0]
+    prediction = model.predict(np.array([last_row]))
+    top_5_classes = np.argsort(-prediction)[0][:5]
 
     print(f"Itération {iteration} - Taux de précision : {accuracy:.2f}%")
     print("Dernière ligne du CSV :", last_row)
-    print("Prédiction pour la dernière ligne : ", np.argmax(prediction))
+    print("Prédiction pour la dernière ligne : ", top_5_classes)
 
     if accuracy > best_accuracy:
         best_accuracy = accuracy
@@ -70,7 +71,7 @@ while best_accuracy < 30:
 # Réentraîner le modèle en incluant la dernière ligne
 model.fit(X, y, epochs=best_hps.get('epochs'))
 last_row = X.iloc[[-1]]
-prediction = model.predict(np.array(last_row))[0]
+prediction = model.predict(np.array(last_row))
 print("Dernière ligne du CSV :")
 print(data.iloc[-1])
 print("Prédiction pour la dernière ligne : ", np.argmax(prediction))
