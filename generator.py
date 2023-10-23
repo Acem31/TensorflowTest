@@ -42,7 +42,12 @@ while best_accuracy < 0.3:
     # Calculer la précision
     accuracy = accuracy_score(y_test, y_pred)
 
+    last_row = data.iloc[-1].values
+    prediction = best_model.predict([last_row[:-2]])[0]
+
     print(f"Itération {iteration} - Taux de précision : {accuracy}")
+    print("Dernière ligne du CSV :", last_row)
+    print("Prédiction pour la dernière ligne : ", prediction)
 
     if accuracy > best_accuracy:
         best_accuracy = accuracy
