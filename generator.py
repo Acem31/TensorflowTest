@@ -9,8 +9,8 @@ from tensorflow.keras import layers
 # Charger le fichier CSV
 data = pd.read_csv('euromillions.csv', delimiter=';', header=None)
 
-X = data.iloc[:-1, :-5]  # Sélectionner toutes les lignes sauf la dernière et les 5 premières colonnes
-y = data.iloc[:-1, -5:]  # Sélectionner toutes les lignes sauf la dernière et les 5 dernières colonnes (5 numéros)
+X = data.iloc[:-100, :5] 
+y = data.iloc[-100:, :5]  
 
 # Sélectionner la dernière ligne du CSV
 last_row = data.iloc[-1, :-5]  # Sélectionner les 5 premières colonnes de la dernière ligne
@@ -34,15 +34,17 @@ while best_accuracy < 30:
         model = keras.Sequential()
         model.add(layers.Dense(units=hp.Int('units', min_value=1, max_value=50, step=1), activation='softmax'))
         model.add(layers.Dense(50, activation='softmax'))
+        model.add(layers.Dense(5, activation='linear'))  # Utilisez 'linear' pour la régression
         model.compile(optimizer=keras.optimizers.Adam(hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])),
-                      loss='mse',  # Utilisez 'mse' pour la régression
+                      loss='mean_squared_error',  # Utilisez 'mean_squared_error' pour la régression
                       metrics=['mae'])  # Utilisez 'mae' pour mesurer l'erreur absolue moyenne
-
+    
         # Ajouter l'hyperparamètre 'epochs'
         epochs = hp.Int('epochs', min_value=5, max_value=30, step=5)
         model.fit(X_train, y_train, epochs=epochs)
-
+    
         return model
+
 
     # Configurer le tuner Keras
     tuner = RandomSearch(
