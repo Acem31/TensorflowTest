@@ -1,14 +1,9 @@
 import os
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, precision_score
 from tensorflow.keras.layers import Input, Dense, Flatten
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
-import tensorflow as tf
-from sklearn.preprocessing import OneHotEncoder
-from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 
 # Ignorer les messages d'erreur TensorFlow
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -25,89 +20,49 @@ if data.shape[1] < 5:
 data = data.iloc[:, :5]  # Garder seulement les 5 premières colonnes
 data.columns = [f'Num{i + 1}' for i in range(5)]  # Renommer les colonnes
 
-# Fonction pour préparer les séquences
-def prepare_sequences(data, seq_length):
-    sequences = []
-    targets = []
-    for i in range(len(data) - seq_length):
-        seq = data.iloc[i:i + seq_length]
-        label = data.iloc[i + seq_length]['Num1']
-        sequences.append(seq.values)
-        targets.append(label)
-    return np.array(sequences), np.array(targets)
-
-# Fonction pour évaluer un modèle avec des hyperparamètres donnés
-def evaluate_model(params):
-    # Paramètres d'hyperparamètres
-    epochs = params['epochs']
-    batch_size = params['batch_size']
-    learning_rate = params['learning_rate']
-    regularization = params['regularization']
-
-    # Préparer les séquences pour l'entraînement
-    seq_length = 10  # Vous pouvez choisir la longueur que vous préférez
-    X, y = prepare_sequences(data, seq_length)
-
-    # Diviser les données en ensembles d'entraînement et de test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Créer un modèle de régression logistique multinomiale
+# Créer un modèle pour générer des prédictions
+def create_model(seq_length):
     input_layer = Input(shape=(seq_length, 5))
     flatten = Flatten()(input_layer)
-    output_layer = Dense(50, activation='softmax', kernel_regularizer=tf.keras.regularizers.l2(regularization))(flatten)
+    output_layer = Dense(50, activation='softmax')(flatten)
 
     model = Model(inputs=input_layer, outputs=output_layer)
-    model.compile(optimizer=Adam(learning_rate=learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
+    return model
 
-    # Créer un encodeur one-hot pour les étiquettes
-    encoder = OneHotEncoder(sparse_output=False)
-    y_train_encoded = encoder.fit_transform(y_train.reshape(-1, 1))
-    y_test_encoded = encoder.transform(y_test.reshape(-1, 1))
+# Préparer les données d'entraînement
+def prepare_training_data(data, seq_length):
+    sequences = []
+    next_numbers = []
+    
+    for i in range(len(data) - seq_length):
+        seq = data.iloc[i:i + seq_length]
+        next_nums = data.iloc[i + seq_length:i + seq_length + 5].values  # Prendre les 5 prochains numéros
+        sequences.append(seq.values)
+        next_numbers.append(next_nums)
+    
+    X = np.array(sequences)
+    y = np.array(next_numbers)
+    
+    return X, y
 
-    # Entraîner le modèle
-    for epoch in range(epochs):
-        model.fit(X_train, y_train_encoded, epochs=1, batch_size=batch_size, verbose=0)
-        
-        # Prendre la dernière ligne du CSV comme entrée pour la prédiction
-        last_line_data = data.iloc[-1, :5].values
-        last_line = last_line_data.reshape(1, seq_length, 5)
-        
-        # Prédire les prochains numéros basés sur la dernière ligne
-        predictions = model.predict(last_line)
-        predicted_number = np.argmax(predictions, axis=1)[0]
-        
-        # Afficher la prédiction
-        print(f'Époque {epoch + 1}, Prédiction du prochain numéro : {predicted_number}')
+# Entraîner le modèle
+seq_length = 10  # Longueur de la séquence
+X, y = prepare_training_data(data, seq_length)
+model = create_model(seq_length)
 
-    # Évaluer le modèle
-    predictions = model.predict(X_test)
-    accuracy = accuracy_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1))
-    precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1), average='weighted', zero_division=0)
+# Entraîner le modèle
+model.fit(X, y, epochs=100, batch_size=32)
 
-    return {'loss': -accuracy, 'status': STATUS_OK}
+# Générer une prédiction pour les prochains numéros
+def generate_prediction(model, last_rows, seq_length):
+    last_rows = np.array(last_rows).reshape(1, seq_length, 5)
+    predictions = model.predict(last_rows)
+    return predictions
 
-# Espace de recherche pour les hyperparamètres
-space = {
-    'epochs': hp.choice('epochs', [5120, 10240, 20480]),
-    'batch_size': hp.choice('batch_size', [1228, 2456, 4912]),
-    'learning_rate': hp.loguniform('learning_rate', -5, -1),
-    'regularization': hp.loguniform('regularization', -6, -2)
-}
-
-# Créer un objet Trials pour suivre les résultats
-trials = Trials()
-
-# Utiliser l'optimisation bayésienne pour trouver les meilleurs hyperparamètres
-best = fmin(fn=evaluate_model, space=space, algo=tpe.suggest, max_evals=100, trials=trials)
-
-# Extraire les meilleurs hyperparamètres
-best_epochs = space['epochs'][best['epochs']]
-best_batch_size = space['batch_size'][best['batch_size']]
-best_learning_rate = best['learning_rate']
-best_regularization = best['regularization']
-
-print(f"Meilleur nombre d'époques : {best_epochs}")
-print(f"Meilleure taille de lot : {best_batch_size}")
-
-# Afficher la prédiction finale après optimisation des hyperparamètres
-evaluate_model({'epochs': best_epochs, 'batch_size': best_batch_size, 'learning_rate': best_learning_rate, 'regularization': best_regularization})
+# Prédire un ensemble de 5 numéros pour les 10 dernières lignes du CSV
+last_rows = data.iloc[-seq_length:].values
+predictions = generate_prediction(model, last_rows, seq_length)
+# Sélectionnez les 5 numéros les plus probables
+top_predictions = predictions[0].argsort()[-5:][::-1]
+print("Prédiction des prochains 5 numéros :", top_predictions)
