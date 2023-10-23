@@ -24,7 +24,7 @@ data.columns = [f'Num{i + 1}' for i in range(5)]  # Renommer les colonnes
 def create_model(seq_length):
     input_layer = Input(shape=(seq_length, 5))
     flatten = Flatten()(input_layer)
-    output_layer = Dense(50, activation='softmax')(flatten)
+    output_layer = Dense(5, activation='softmax')(flatten)
 
     model = Model(inputs=input_layer, outputs=output_layer)
     model.compile(optimizer=Adam(learning_rate=0.001), loss='categorical_crossentropy', metrics=['accuracy'])
