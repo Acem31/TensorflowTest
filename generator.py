@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from kerastuner.tuners import RandomSearch
 from kerastuner.engine.hyperparameters import HyperParameters
@@ -11,15 +10,13 @@ from tensorflow.keras import layers
 data = pd.read_csv('euromillions.csv', delimiter=';', header=None)
 
 X = data.iloc[:-1, :-5]  # Sélectionner toutes les lignes sauf la dernière et les 5 premières colonnes
+y = data.iloc[:-1, -5:]  # Sélectionner toutes les lignes sauf la dernière et les 5 dernières colonnes (5 numéros)
 
 # Sélectionner la dernière ligne du CSV
 last_row = data.iloc[-1, :-5]  # Sélectionner les 5 premières colonnes de la dernière ligne
 
-# Créer un DataFrame avec les données à prédire
-to_predict = pd.DataFrame(last_row).T  # Transformez les données en une ligne de données à prédire
-
 # Les 5 numéros à prédire
-y = last_row
+to_predict = last_row.to_numpy().reshape(1, -1)
 
 best_accuracy = 0.0
 best_params = {}
@@ -27,8 +24,10 @@ iteration = 0
 
 while best_accuracy < 30:
     iteration += 1
-    # Diviser les données en ensemble d'apprentissage et de test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Diviser les données en ensemble d'apprentissage
+    X_train = X
+    y_train = y
 
     # Définir la fonction de modèle Keras pour Keras Tuner
     def build_model(hp):
@@ -36,18 +35,19 @@ while best_accuracy < 30:
         model.add(layers.Dense(units=hp.Int('units', min_value=1, max_value=50, step=1), activation='softmax'))
         model.add(layers.Dense(50, activation='softmax'))
         model.compile(optimizer=keras.optimizers.Adam(hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])),
-                      loss='sparse_categorical_crossentropy',
-                      metrics=['accuracy'])
-        
+                      loss='mse',  # Utilisez 'mse' pour la régression
+                      metrics=['mae'])  # Utilisez 'mae' pour mesurer l'erreur absolue moyenne
+
         # Ajouter l'hyperparamètre 'epochs'
         epochs = hp.Int('epochs', min_value=5, max_value=30, step=5)
-        model.fit(X_train, y_train, epochs=epochs, validation_data=(X_test, y_test))
+        model.fit(X_train, y_train, epochs=epochs)
+
         return model
 
     # Configurer le tuner Keras
     tuner = RandomSearch(
         build_model,
-        objective='accuracy',
+        objective='mae',  # Utilisez l'erreur absolue moyenne pour la régression
         max_trials=10,
         directory='my_dir',
         project_name='my_project'
@@ -62,22 +62,25 @@ while best_accuracy < 30:
     # Construire le modèle avec les meilleurs hyperparamètres
     model = tuner.hypermodel.build(best_hps)
 
-    # Faire des prédictions sur l'ensemble de test
+    # Faire des prédictions pour la dernière ligne
     y_pred = model.predict(to_predict)
-    accuracy = accuracy_score(y, np.argmax(y_pred, axis=1)) * 100
 
-    print(f"Itération {iteration} - Taux de précision : {accuracy:.2f}%")
+    # Calculer l'erreur absolue moyenne entre les vrais numéros et les prédictions
+    mae = np.mean(np.abs(last_row.to_numpy() - y_pred[0]))
+
+    print(f"Itération {iteration} - Erreur absolue moyenne : {mae:.2f}")
     print("Dernière ligne du CSV :", last_row)
-    print("Prédiction pour la dernière ligne : ", np.argmax(y_pred))
+    print("Prédiction pour la dernière ligne : ", y_pred[0])
 
-    if accuracy > best_accuracy:
-        best_accuracy = accuracy
+    if mae < best_accuracy:
+        best_accuracy = mae
 
 # Réentraîner le modèle en incluant la dernière ligne
 model.fit(X, y, epochs=best_hps.get('epochs'))
+
 last_row = data.iloc[-1, :-5]  # Sélectionner les 5 premières colonnes de la dernière ligne
-prediction = model.predict(pd.DataFrame(last_row).T)
+prediction = model.predict(last_row.to_numpy().reshape(1, -1))
 print("Dernière ligne du CSV :")
 print(last_row)
-print("Prédiction pour la dernière ligne : ", np.argmax(prediction))
-print("Taux de précision final : {0:.2f}%".format(best_accuracy))
+print("Prédiction pour la dernière ligne : ", prediction[0])
+print("Erreur absolue moyenne finale : {0:.2f}".format(best_accuracy))
