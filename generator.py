@@ -10,6 +10,8 @@ from tensorflow.keras import layers
 # Charger le fichier CSV
 data = pd.read_csv('euromillions.csv', delimiter=';', header=None)
 
+X = data.iloc[:-1, :-5]  # Sélectionner toutes les lignes sauf la dernière et les 5 premières colonnes
+
 # Sélectionner la dernière ligne du CSV
 last_row = data.iloc[-1, :-5]  # Sélectionner les 5 premières colonnes de la dernière ligne
 
