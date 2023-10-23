@@ -60,13 +60,14 @@ class CSVHandler(FileSystemEventHandler):
 def start_program(right_win):
     global program_running, program_thread
     program_running = True
-    program_thread = threading.Thread(target=start_program, args=(right_win,))
+    program_thread = threading.Thread(target=start_program_worker, args=(right_win,))
     program_thread.start()
     right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
     right_win.refresh()
+    # ...
 
+def start_program_worker(right_win):
     max_y, max_x = right_win.getmaxyx()
-
     master, slave = pty.openpty()
     cmd = ["python3.10", "reinf_tuples.py"]
     process = subprocess.Popen(
@@ -95,7 +96,7 @@ def start_program(right_win):
 
     process.wait()
     program_running = False
-
+    
 # Fonction pour arrêter le programme
 def stop_program():
     global program_running, program_thread
