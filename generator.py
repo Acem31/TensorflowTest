@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV
 
 # Charger le fichier CSV
-data = pd.read_csv('euromilions.csv', delimiter=';', header=None)
+data = pd.read_csv('euromillions.csv', delimiter=';', header=None)
 X = data.iloc[:, :-2]  # Sélectionner les 5 premières colonnes
 y = data.iloc[:, -1]  # Dernière colonne à prédire
 
