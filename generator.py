@@ -38,7 +38,7 @@ while best_accuracy < 30:
     # Configurer le tuner Keras
     tuner = RandomSearch(
         build_model,
-        objective='val_accuracy',
+        objective='val_acc',
         max_trials=10,
         directory='my_dir',
         project_name='my_project'
