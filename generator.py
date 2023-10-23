@@ -29,6 +29,10 @@ while best_accuracy < 30:
         model.compile(optimizer=keras.optimizers.Adam(hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])),
                       loss='sparse_categorical_crossentropy',
                       metrics=['accuracy'])
+        
+        # Ajouter l'hyperparamètre 'epochs'
+        epochs = hp.Int('epochs', min_value=5, max_value=30, step=5)
+        model.fit(X_train, y_train, epochs=epochs, validation_data=(X_test, y_test))
         return model
 
     # Configurer le tuner Keras
@@ -40,18 +44,14 @@ while best_accuracy < 30:
         project_name='my_project'
     )
 
-    # Ajouter le nombre d'epochs comme un hyperparamètre à optimiser
-    tuner.search_space.update({'epochs': hp.Int('epochs', min_value=5, max_value=30, step=5)})
-
     # Effectuer la recherche des hyperparamètres
-    tuner.search(X_train, y_train, epochs=10, validation_data=(X_test, y_test))
+    tuner.search(X_train, y_train)
 
     # Récupérer les meilleurs hyperparamètres
     best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
-    # Construire et entraîner le modèle avec les meilleurs hyperparamètres
+    # Construire le modèle avec les meilleurs hyperparamètres
     model = tuner.hypermodel.build(best_hps)
-    model.fit(X_train, y_train, epochs=best_hps.get('epochs'), validation_data=(X_test, y_test))
 
     # Faire des prédictions sur l'ensemble de test
     y_pred = model.predict(X_test)
@@ -66,10 +66,6 @@ while best_accuracy < 30:
 
     if accuracy > best_accuracy:
         best_accuracy = accuracy
-
-    # Mettre à jour les hyperparamètres pour la prochaine boucle
-    tuner.search_space.data['epochs'].min_value += 5
-    tuner.search_space.data['epochs'].max_value += 5
 
 # Réentraîner le modèle en incluant la dernière ligne
 model.fit(X, y, epochs=best_hps.get('epochs'))
