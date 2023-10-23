@@ -33,16 +33,19 @@ def create_model(seq_length):
 # Préparer les données d'entraînement
 def prepare_training_data(data, seq_length):
     sequences = []
-    next_numbers = []
+    next_tuples = []  # Liste pour stocker les tuples de 5 numéros
     
     for i in range(len(data) - seq_length):
         seq = data.iloc[i:i + seq_length]
-        next_nums = data.iloc[i + seq_length:i + seq_length + 5].values  # Prendre les 5 prochains numéros
+        next_nums = data.iloc[i + seq_length:i + seq_length + 5].values
         sequences.append(seq.values)
-        next_numbers.append(next_nums)
+        
+        # Stocker les 5 numéros sous forme de tuple
+        next_tuple = tuple(next_nums[0])
+        next_tuples.append(next_tuple)
     
     X = np.array(sequences)
-    y = np.array(next_numbers)
+    y = np.array(next_tuples)
     
     return X, y
 
