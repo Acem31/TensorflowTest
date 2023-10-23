@@ -12,6 +12,15 @@ best_accuracy = 0.0
 # Initialisation du nombre d'itérations
 iteration = 0
 
+# Créer un tuner Keras pour la recherche d'hyperparamètres
+tuner = RandomSearch(
+    predict_next_tuple,
+    objective='mae',
+    max_trials=10,
+    directory='my_dir',
+    project_name='my_project'
+)
+
 while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
 
@@ -41,16 +50,7 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
 
         return prediction[0]
 
-    # Créer un tuner Keras pour la recherche d'hyperparamètres
-    tuner = RandomSearch(
-        predict_next_tuple,
-        objective='mae',
-        max_trials=10,
-        directory='my_dir',
-        project_name='my_project'
-    )
-
-    # Chercher les meilleurs hyperparamètres
+    # Chercher les meilleurs hyperparamètres pour cette itération
     tuner.search(last_row, best_hps)
 
     # Prédire le prochain tuple en utilisant les meilleurs hyperparamètres actuels
