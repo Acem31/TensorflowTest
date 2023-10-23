@@ -12,6 +12,8 @@ from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 
 # Ignorer les messages d'erreur TensorFlow
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 # Charger les données CSV et prétraiter
 data = pd.read_csv('euromillions.csv', sep=';', header=None)
