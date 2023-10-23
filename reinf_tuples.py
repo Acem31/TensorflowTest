@@ -54,7 +54,7 @@ def evaluate_model(params):
     # Créer un modèle de régression logistique multinomiale
     input_layer = Input(shape=(seq_length, 5))
     flatten = Flatten()(input_layer)
-    output_layer = Dense(34, activation='softmax', kernel_regularizer=tf.keras.regularizers.l2(regularization))(flatten)
+    output_layer = Dense(50, activation='softmax', kernel_regularizer=tf.keras.regularizers.l2(regularization))(flatten)
 
     model = Model(inputs=input_layer, outputs=output_layer)
     model.compile(optimizer=Adam(learning_rate=learning_rate), loss='categorical_crossentropy', metrics=['accuracy'])
@@ -65,12 +65,22 @@ def evaluate_model(params):
     y_test_encoded = encoder.transform(y_test.reshape(-1, 1))
 
     # Entraîner le modèle
-    model.fit(X_train, y_train_encoded, epochs=epochs, batch_size=batch_size, verbose=0)
-
-    # Prédire sur les données de test
-    predictions = model.predict(X_test)
+    for epoch in range(epochs):
+        model.fit(X_train, y_train_encoded, epochs=1, batch_size=batch_size, verbose=0)
+        
+        # Prendre la dernière ligne du CSV comme entrée pour la prédiction
+        last_line_data = data.iloc[-1, :5].values
+        last_line = last_line_data.reshape(1, seq_length, 5)
+        
+        # Prédire les prochains numéros basés sur la dernière ligne
+        predictions = model.predict(last_line)
+        predicted_number = np.argmax(predictions, axis=1)[0]
+        
+        # Afficher la prédiction
+        print(f'Époque {epoch + 1}, Prédiction du prochain numéro : {predicted_number}')
 
     # Évaluer le modèle
+    predictions = model.predict(X_test)
     accuracy = accuracy_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1))
     precision = precision_score(np.argmax(y_test_encoded, axis=1), np.argmax(predictions, axis=1), average='weighted', zero_division=0)
 
@@ -96,28 +106,8 @@ best_batch_size = space['batch_size'][best['batch_size']]
 best_learning_rate = best['learning_rate']
 best_regularization = best['regularization']
 
+print(f"Meilleur nombre d'époques : {best_epochs}")
+print(f"Meilleure taille de lot : {best_batch_size}")
 
-# Utiliser les meilleurs hyperparamètres pour entraîner le modèle
-best_params = {
-    'epochs': best_epochs,
-    'batch_size': best_batch_size,
-    'learning_rate': best_learning_rate,
-    'regularization': best_regularization
-}
-best_model = evaluate_model(best_params)
-print('Meilleur taux de réussite atteint :', -best_model['loss'])
-
-# Utiliser le meilleur modèle trouvé
-model = best_model
-
-# Prendre la dernière ligne du CSV comme entrée pour la prédiction
-last_line_data = data.iloc[-1, :5].values
-last_line = last_line_data.reshape(1, seq_length, 5)
-
-# Prédire les prochains numéros basés sur la dernière ligne
-predictions = model.predict(last_line)
-predicted_number = np.argmax(predictions, axis=1)[0]
-
-print('Meilleur nombre d\'époques :', best_epochs)
-print('Meilleure taille de lot :', best_batch_size)
-print('Prédiction du prochain numéro :', predicted_number)
+# Afficher la prédiction finale après optimisation des hyperparamètres
+evaluate_model({'epochs': best_epochs, 'batch_size': best_batch_size, 'learning_rate': best_learning_rate, 'regularization': best_regularization})
