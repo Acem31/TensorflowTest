@@ -9,11 +9,11 @@ from tensorflow.keras import layers
 # Charger le fichier CSV
 data = pd.read_csv('euromillions.csv', delimiter=';', header=None)
 
-X = data.iloc[:-100, :5] 
-y = data.iloc[-100:, :5]  
+X = data.iloc[:-1, :5] 
+y = data.iloc[:-1, :5]  
 
 # Sélectionner la dernière ligne du CSV
-last_row = data.iloc[-1, :-5]  # Sélectionner les 5 premières colonnes de la dernière ligne
+last_row = data.iloc[-1, :5] 
 
 # Les 5 numéros à prédire
 to_predict = last_row.to_numpy().reshape(1, -1)
