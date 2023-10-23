@@ -1,9 +1,13 @@
 import os
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from tensorflow.keras.layers import Input, Dense, Flatten
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
+from sklearn.preprocessing import OneHotEncoder
+from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 
 # Ignorer les messages d'erreur TensorFlow
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -63,7 +67,7 @@ def generate_prediction(model, last_rows, seq_length):
     predictions = model.predict(last_rows)
     return predictions
 
-# Prédire un ensemble de 5 numéros pour les 10 dernières lignes du CSV
+# Prédire un tuple de 5 numéros pour les 10 dernières lignes du CSV
 last_rows = data.iloc[-seq_length:].values
 predictions = generate_prediction(model, last_rows, seq_length)
 # Sélectionnez les 5 numéros les plus probables
