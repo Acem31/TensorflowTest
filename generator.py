@@ -12,8 +12,10 @@ y = data.iloc[:, -1]  # Dernière colonne à prédire
 
 best_accuracy = 0.0
 best_params = {}
+iteration = 0
 
 while best_accuracy < 0.3:
+    iteration += 1
     # Diviser les données en ensemble d'apprentissage et de test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
@@ -40,20 +42,20 @@ while best_accuracy < 0.3:
     # Calculer la précision
     accuracy = accuracy_score(y_test, y_pred)
 
+    print(f"Itération {iteration} - Taux de précision : {accuracy}")
+
     if accuracy > best_accuracy:
         best_accuracy = accuracy
-    else:
-        break
 
-# Si la précision atteint 30% ou plus
-if best_accuracy >= 0.3:
-    # Réentraîner le modèle en incluant la dernière ligne
-    best_model.fit(X, y)
-    last_row = X.iloc[[-1]]
-    prediction = best_model.predict(last_row)
-    print("Dernière ligne du CSV :")
-    print(data.iloc[-1])
-    print("Prédiction pour la dernière ligne : ", prediction[0])
-    print("Taux de précision : ", best_accuracy)
-else:
-    print("La précision maximale n'a pas atteint 30%.")
+    # Mettre à jour les hyperparamètres pour la prochaine boucle
+    param_grid['n_estimators'] = [n * 2 for n in param_grid['n_estimators']]
+    param_grid['max_depth'] = [d + 10 if d is not None else None for d in param_grid['max_depth']]
+
+# Réentraîner le modèle en incluant la dernière ligne
+best_model.fit(X, y)
+last_row = X.iloc[[-1]]
+prediction = best_model.predict(last_row)
+print("Dernière ligne du CSV :")
+print(data.iloc[-1])
+print("Prédiction pour la dernière ligne : ", prediction[0])
+print("Taux de précision final : ", best_accuracy)
