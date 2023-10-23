@@ -14,7 +14,7 @@ best_accuracy = 0.0
 best_params = {}
 iteration = 0
 
-while best_accuracy < 0.3:
+while best_accuracy < 30:
     iteration += 1
     # Diviser les données en ensemble d'apprentissage et de test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -39,13 +39,13 @@ while best_accuracy < 0.3:
     # Faire des prédictions sur l'ensemble de test
     y_pred = best_model.predict(X_test)
 
-    # Calculer la précision
-    accuracy = accuracy_score(y_test, y_pred)
+    # Calculer la précision en pourcentage
+    accuracy = accuracy_score(y_test, y_pred) * 100
 
     last_row = data.iloc[-1].values
     prediction = best_model.predict([last_row[:-2]])[0]
 
-    print(f"Itération {iteration} - Taux de précision : {accuracy}")
+    print(f"Itération {iteration} - Taux de précision : {accuracy:.2f}%")
     print("Dernière ligne du CSV :", last_row)
     print("Prédiction pour la dernière ligne : ", prediction)
 
@@ -63,4 +63,4 @@ prediction = best_model.predict(last_row)
 print("Dernière ligne du CSV :")
 print(data.iloc[-1])
 print("Prédiction pour la dernière ligne : ", prediction[0])
-print("Taux de précision final : ", best_accuracy)
+print("Taux de précision final : {0:.2f}%".format(best_accuracy))
