@@ -18,11 +18,11 @@ last_row = data.iloc[-1, :5]
 # Les 5 numéros à prédire
 to_predict = last_row.to_numpy().reshape(1, -1)
 
-best_accuracy = 0.0
+best_accuracy = 0.0  # Initialisation du meilleur taux de précision
 best_params = {}
 iteration = 0
 
-while best_accuracy < 30:
+while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
 
     # Diviser les données en ensemble d'apprentissage
@@ -34,17 +34,16 @@ while best_accuracy < 30:
         model = keras.Sequential()
         model.add(layers.Dense(units=hp.Int('units', min_value=1, max_value=50, step=1), activation='softmax'))
         model.add(layers.Dense(50, activation='softmax'))
-        model.add(layers.Dense(5, activation='linear'))  # Utilisez 'linear' pour la régression
+        model.add(layers.Dense(5, activation='softmax'))  # Utilisez 'softmax' pour la classification multiclasse
         model.compile(optimizer=keras.optimizers.Adam(hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])),
-                      loss='mean_squared_error',  # Utilisez 'mean_squared_error' pour la régression
-                      metrics=['mae'])  # Utilisez 'mae' pour mesurer l'erreur absolue moyenne
+                      loss='categorical_crossentropy',  # Utilisez 'categorical_crossentropy' pour la classification
+                      metrics=['accuracy'])  # Utilisez 'accuracy' pour mesurer le taux de précision
     
         # Ajouter l'hyperparamètre 'epochs'
         epochs = hp.Int('epochs', min_value=5, max_value=30, step=5)
         model.fit(X_train, y_train, epochs=epochs)
     
         return model
-
 
     # Configurer le tuner Keras
     tuner = RandomSearch(
