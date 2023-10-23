@@ -18,7 +18,6 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # Variable globale pour suivre l'état du programme
 program_running = False
-table_data = []
 program_thread = None  # Référence au thread du programme
 
 # Hauteur du tableau
@@ -57,8 +56,6 @@ class CSVHandler(FileSystemEventHandler):
                 else:
                     row = ["0"] * len(table_headers)  # Remplacer les données vides par des zéros
                 update_table(self.table, row)
-                table_data.clear()
-                table_data.extend(data)
 
 def start_program(right_win):
     global program_running
@@ -107,7 +104,7 @@ def stop_program():
 
 # Fonction pour afficher la fenêtre TUI
 def create_tui_window(stdscr):
-    global program_running
+    global program_running, program_thread
 
     def run_program():
         if not program_running:
