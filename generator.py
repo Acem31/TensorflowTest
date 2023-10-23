@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import GridSearchCV
+from kerastuner.tuners import RandomSearch
+from kerastuner.engine.hyperparameters import HyperParameters
+from tensorflow import keras
+from tensorflow.keras import layers
 
 # Charger le fichier CSV
 data = pd.read_csv('euromillions.csv', delimiter=';', header=None)
@@ -19,52 +21,61 @@ while best_accuracy < 30:
     # Diviser les données en ensemble d'apprentissage et de test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Créer un modèle (Random Forest, par exemple)
-    model = RandomForestClassifier()
+    # Définir la fonction de modèle Keras pour Keras Tuner
+    def build_model(hp):
+        model = keras.Sequential()
+        model.add(layers.Dense(units=hp.Int('units', min_value=32, max_value=512, step=32), activation='relu', input_shape=(X_train.shape[1],)))
+        model.add(layers.Dense(10, activation='softmax'))
+        model.compile(optimizer=keras.optimizers.Adam(hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])),
+                      loss='sparse_categorical_crossentropy',
+                      metrics=['accuracy'])
+        return model
 
-    param_grid = {
-        'n_estimators': [50, 100, 200, 300],
-        'max_depth': [None, 10, 20, 30, 40],
-        'min_samples_split': [2, 5, 10],
-        'min_samples_leaf': [1, 2, 4],
-        'max_features': ['auto', 'sqrt', 'log2', None],  # Ajout de 'log2' et 'None'
-        'bootstrap': [True, False]
-    }
+    # Configurer le tuner Keras
+    tuner = RandomSearch(
+        build_model,
+        objective='val_accuracy',
+        max_trials=10,
+        directory='my_dir',
+        project_name='my_project'
+    )
 
+    # Ajouter le nombre d'epochs comme un hyperparamètre à optimiser
+    tuner.search_space.update({'epochs': hp.Int('epochs', min_value=5, max_value=30, step=5)})
 
-    # Utiliser GridSearchCV pour rechercher les meilleurs hyperparamètres
-    grid_search = GridSearchCV(model, param_grid, cv=5)
-    grid_search.fit(X_train, y_train)
+    # Effectuer la recherche des hyperparamètres
+    tuner.search(X_train, y_train, epochs=10, validation_data=(X_test, y_test))
 
-    # Obtenir les meilleurs hyperparamètres
-    best_model = grid_search.best_estimator_
-    best_params = grid_search.best_params_
+    # Récupérer les meilleurs hyperparamètres
+    best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
+
+    # Construire et entraîner le modèle avec les meilleurs hyperparamètres
+    model = tuner.hypermodel.build(best_hps)
+    model.fit(X_train, y_train, epochs=best_hps.get('epochs'), validation_data=(X_test, y_test))
 
     # Faire des prédictions sur l'ensemble de test
-    y_pred = best_model.predict(X_test)
-
-    # Calculer la précision en pourcentage
-    accuracy = accuracy_score(y_test, y_pred) * 100
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, np.argmax(y_pred, axis=1)) * 100
 
     last_row = data.iloc[-1].values[:-2]
-    prediction = best_model.predict([last_row])[0]
+    prediction = model.predict(np.array([last_row]))[0]
 
     print(f"Itération {iteration} - Taux de précision : {accuracy:.2f}%")
     print("Dernière ligne du CSV :", last_row)
-    print("Prédiction pour la dernière ligne : ", prediction)
+    print("Prédiction pour la dernière ligne : ", np.argmax(prediction))
 
     if accuracy > best_accuracy:
         best_accuracy = accuracy
 
     # Mettre à jour les hyperparamètres pour la prochaine boucle
-    param_grid['n_estimators'] = [n * 2 for n in param_grid['n_estimators']]
-    param_grid['max_depth'] = [d + 10 if d is not None else None for d in param_grid['max_depth']]
+    tuner.search_space.data['epochs'].min_value += 5
+    tuner.search_space.data['epochs'].max_value += 5
 
 # Réentraîner le modèle en incluant la dernière ligne
-best_model.fit(X, y)
+model.fit(X, y, epochs=best_hps.get('epochs'))
 last_row = X.iloc[[-1]]
-prediction = best_model.predict(last_row)
+prediction = model.predict(np.array(last_row))[0]
 print("Dernière ligne du CSV :")
 print(data.iloc[-1])
-print("Prédiction pour la dernière ligne : ", prediction[0])
+print("Prédiction pour la dernière ligne : ", np.argmax(prediction))
 print("Taux de précision final : {0:.2f}%".format(best_accuracy))
