@@ -6,19 +6,14 @@ from parameter import best_hps  # Importer les meilleurs hyperparamètres depuis
 # Charger les données en utilisant la fonction read_euromillions_data
 euromillions_data = read_euromillions_data('euromillions.csv')
 
-# Préparer les données d'entraînement
-X = np.array([tuple[:5] for tuple in euromillions_data[:-1]])
-y = np.array(euromillions_data[1:])  # Nous prédisons la ligne suivante par rapport à celle précédente
-
 # Initialisation du taux de précision
 best_accuracy = 0.0
 
 # Initialisation du nombre d'itérations
 iteration = 0
 
-while best_accuracy < 0.3:  # Le seuil est de 30%
-    iteration += 1
-
+# Définir une fonction pour prédire un tuple de 5 numéros
+def predict_next_tuple(last_tuple):
     # Construire le modèle ANN avec les meilleurs hyperparamètres
     model = keras.Sequential([
         keras.layers.Dense(best_hps.Int('units', min_value=32, max_value=512, step=32), activation='relu', input_shape=(5,)),
@@ -31,13 +26,25 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
                   loss='mse', metrics=['mae'])
 
     # Entraîner le modèle
+    X = np.array(euromillions_data[:-1])
+    y = np.array(euromillions_data[1:])
     model.fit(X, y, epochs=50, batch_size=1, verbose=2)
 
     # Prédire le prochain tuple
-    last_tuple = np.array(euromillions_data[-1][:5]).reshape(1, -1)
-    prediction = model.predict(last_tuple)
+    prediction = model.predict(last_tuple.reshape(1, 5))
 
-    print(f"Itération {iteration} - Prédiction pour le prochain tuple : ", prediction[0])
+    return prediction[0]
+
+while best_accuracy < 0.3:  # Le seuil est de 30%
+    iteration += 1
+
+    # Sélectionner la dernière ligne du CSV
+    last_row = np.array(euromillions_data[-1][:5])
+
+    # Prédire le prochain tuple
+    next_tuple = predict_next_tuple(last_row)
+
+    print(f"Itération {iteration} - Prédiction pour le prochain tuple : {next_tuple}")
 
     # Calculer la précision (à adapter selon le type de problème)
     # Par exemple, si vous effectuez une classification, utilisez accuracy_score
@@ -48,5 +55,11 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
 
     if accuracy > best_accuracy:
         best_accuracy = accuracy
+
+# Prédiction finale
+if best_accuracy >= 0.3:
+    last_row = np.array(euromillions_data[-1][:5])
+    final_prediction = predict_next_tuple(last_row)
+    print(f"Prédiction finale : {final_prediction}")
 
 print("Taux de précision atteint : {0:.2f}".format(best_accuracy))
