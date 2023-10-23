@@ -27,9 +27,10 @@ while best_accuracy < 30:
         'max_depth': [None, 10, 20, 30, 40],
         'min_samples_split': [2, 5, 10],
         'min_samples_leaf': [1, 2, 4],
-        'max_features': ['auto', 'sqrt'],
+        'max_features': ['auto', 'sqrt', 'log2', None],  # Ajout de 'log2' et 'None'
         'bootstrap': [True, False]
     }
+
 
     # Utiliser GridSearchCV pour rechercher les meilleurs hyperparamètres
     grid_search = GridSearchCV(model, param_grid, cv=5)
@@ -45,8 +46,8 @@ while best_accuracy < 30:
     # Calculer la précision en pourcentage
     accuracy = accuracy_score(y_test, y_pred) * 100
 
-    last_row = data.iloc[-1].values
-    prediction = best_model.predict([last_row[:-2]])[0]
+    last_row = data.iloc[-1].values[:-2]
+    prediction = best_model.predict([last_row])[0]
 
     print(f"Itération {iteration} - Taux de précision : {accuracy:.2f}%")
     print("Dernière ligne du CSV :", last_row)
