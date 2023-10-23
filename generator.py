@@ -22,10 +22,13 @@ while best_accuracy < 30:
     # Créer un modèle (Random Forest, par exemple)
     model = RandomForestClassifier()
 
-    # Définir une grille d'hyperparamètres à rechercher
     param_grid = {
-        'n_estimators': [10, 50, 100, 200],
-        'max_depth': [None, 10, 20, 30],
+        'n_estimators': [50, 100, 200, 300],
+        'max_depth': [None, 10, 20, 30, 40],
+        'min_samples_split': [2, 5, 10],
+        'min_samples_leaf': [1, 2, 4],
+        'max_features': ['auto', 'sqrt'],
+        'bootstrap': [True, False]
     }
 
     # Utiliser GridSearchCV pour rechercher les meilleurs hyperparamètres
