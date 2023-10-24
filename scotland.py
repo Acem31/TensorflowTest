@@ -16,8 +16,6 @@ best_accuracy = 0.0
 iteration = 0
 
 batch_size = 1
-hp = HyperParameters()
-hp.Choice('activation', values=['relu', 'leaky_relu', 'sigmoid', 'tanh'])
 
 while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
@@ -49,6 +47,9 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
 
         return prediction[0]
 
+    hp = HyperParameters()
+    hp.Choice('activation', values=['relu', 'leaky_relu', 'sigmoid', 'tanh'])
+    
     # Créer un tuner Keras pour la recherche d'hyperparamètres
     tuner = RandomSearch(
         predict_next_tuple,
