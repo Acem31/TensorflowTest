@@ -18,6 +18,7 @@ batch_size = 1
 
 # Liste des fonctions d'activation à tester
 activation_functions = ['sigmoid', 'tanh']
+model = None
 
 while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
@@ -31,6 +32,7 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
     for activation in activation_functions:
         # Définir une fonction pour prédire un tuple de 5 numéros
         def predict_next_tuple(last_tuple, hps):
+            nonlocal model
             # Extraire les valeurs optimisées d'hyperparamètres
             best_units = hps.get('units')
             best_learning_rate = hps.get('learning_rate')
