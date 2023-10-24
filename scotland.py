@@ -79,12 +79,13 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
 
         # Calculer la précision (à adapter selon le type de problème)
 
+        # Calculer la précision (à adapter selon le type de problème)
         current_directory = os.getcwd()
         files = os.listdir(current_directory)
         weight_files = [file for file in files if file.startswith('model_weights_iteration_')]
-        latest_weight_file = max(weight_files)
-
-        # Pour la régression, utilisez une métrique appropriée
+        latest_weight_file = max(weight_files, key=lambda x: int(x.split('_')[-1].split('.')[0]))
+        
+        # Chargez les poids du modèle à partir du fichier le plus récent
         model.load_weights(os.path.join(current_directory, latest_weight_file))
         accuracy = model.evaluate(X, y, verbose=0)  # Évaluez le modèle sur vos données
         mse = accuracy[0]
