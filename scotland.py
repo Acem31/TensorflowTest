@@ -2,6 +2,7 @@ import numpy as np
 from tensorflow import keras
 from data import read_euromillions_data
 from kerastuner.tuners import RandomSearch
+from kerastuner.engine.hyperparameters import HyperParameters
 from parameter import update_batch_size  # Importez la fonction depuis parameter.py
 from tensorflow.keras.activations import relu, sigmoid, tanh
 from tensorflow.keras.layers import Dense
@@ -16,6 +17,7 @@ best_accuracy = 0.0
 iteration = 0
 
 batch_size = 1
+hp = HyperParameters()
 hp.Choice('activation', values=['relu', 'leaky_relu', 'sigmoid', 'tanh'])
 
 while best_accuracy < 0.3:  # Le seuil est de 30%
