@@ -32,7 +32,7 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
         # Créez un objet HyperParameters pour définir les hyperparamètres
         hp = HyperParameters()
         hp.Choice('activation', values=[activation])
-        hp.Choice('regularization', values=[None, 'l1', 'l2'])
+        hp.Choice('regularization', values=['l1', 'l2'])
         hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])
 
         # Définir une fonction pour prédire un tuple de 5 numéros
