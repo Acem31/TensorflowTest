@@ -3,6 +3,7 @@ from tensorflow import keras
 from data import read_euromillions_data
 from kerastuner.tuners import RandomSearch
 from parameter import update_batch_size  # Importez la fonction depuis parameter.py
+from kerastuner.engine.hyperparameters import HyperParameters
 
 # Charger les données en utilisant la fonction read_euromillions_data
 euromillions_data = read_euromillions_data('euromillions.csv')
