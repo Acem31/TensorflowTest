@@ -3,7 +3,8 @@ from tensorflow import keras
 from data import read_euromillions_data
 from kerastuner.tuners import RandomSearch
 from parameter import update_batch_size  # Importez la fonction depuis parameter.py
-from tensorflow.keras.layers import ReLU, LeakyReLU, Sigmoid, Tanh
+from tensorflow.keras.activations import relu, sigmoid, tanh
+from tensorflow.keras.layers import Dense
 
 # Charger les données en utilisant la fonction read_euromillions_data
 euromillions_data = read_euromillions_data('euromillions.csv')
