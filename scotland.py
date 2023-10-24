@@ -30,6 +30,10 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
     for activation in activation_functions:
         # Définir une fonction pour prédire un tuple de 5 numéros
         def predict_next_tuple(last_tuple, hps):
+            # Extraire les valeurs optimisées d'hyperparamètres
+            best_activation = hps.get('activation')
+            best_units = hps.get('units')
+            best_learning_rate = hps.get('learning_rate')
             # Construire le modèle ANN avec les hyperparamètres actuels
             model = keras.Sequential([
                 keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation=activation, input_shape=(5,)),
@@ -74,7 +78,8 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
         # Calculer la précision (à adapter selon le type de problème)
         # Par exemple, si vous effectuez une classification, utilisez accuracy_score
         # Pour la régression, utilisez une métrique appropriée
-        accuracy = 0.0  # Calculez ici votre taux de précision
+        accuracy = model.evaluate(X, y, verbose=0)  # Évaluez le modèle sur vos données
+        mse = accuracy[0]
 
         print(f"Précision pour l'itération {iteration}, Activation: {activation} : {accuracy:.2f}")
 
