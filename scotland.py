@@ -28,7 +28,7 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
     last_row = np.array(euromillions_data[-1][:5])
 
     # Définir une fonction pour prédire un tuple de 5 numéros
-    def predict_next_tuple(last_tuple, hps):
+    def predict_next_tuple(hps):
         # Construire le modèle ANN avec les hyperparamètres actuels
         if hps.get('activation') == 'relu':
             activation_fn = ReLU()
@@ -55,7 +55,7 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
         model.fit(X, y, epochs=iteration * 50, batch_size=batch_size, verbose=2)
 
         # Prédire le prochain tuple
-        prediction = model.predict(last_tuple.reshape(1, 5))
+        prediction = model.predict(last_row.reshape(1, 5))
 
         return prediction[0]
 
@@ -70,13 +70,13 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
     )
 
     # Chercher les meilleurs hyperparamètres pour cette itération
-    tuner.search(last_row, num_trials=10)  # Effectuer la recherche d'hyperparamètres
+    tuner.search(num_trials=10)  # Effectuer la recherche d'hyperparamètres
 
     # Obtenir les meilleurs hyperparamètres de la recherche
     best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
     # Prédire le prochain tuple en utilisant les meilleurs hyperparamètres actuels
-    next_tuple = predict_next_tuple(last_row, best_hps)
+    next_tuple = predict_next_tuple(best_hps)
 
     print(f"Itération {iteration} - Prédiction pour le prochain tuple : {next_tuple}")
 
