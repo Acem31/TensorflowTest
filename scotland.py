@@ -18,7 +18,6 @@ batch_size = 1
 
 # Liste des fonctions d'activation à tester
 activation_functions = ['sigmoid', 'tanh']
-model = None
 
 while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
@@ -32,7 +31,6 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
     for activation in activation_functions:
         # Définir une fonction pour prédire un tuple de 5 numéros
         def predict_next_tuple(last_tuple, hps):
-            nonlocal model
             # Extraire les valeurs optimisées d'hyperparamètres
             best_units = hps.get('units')
             best_learning_rate = hps.get('learning_rate')
@@ -57,7 +55,10 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
             # Prédire le prochain tuple
             prediction = model.predict(last_tuple.reshape(1, 5))
 
-            return prediction[0]
+            accuracy = model.evaluate(X, y, verbose=0)  # Évaluez le modèle sur vos données
+            mse = accuracy[0]
+
+            return prediction[0], mse
 
         # Créer un tuner Keras pour la recherche d'hyperparamètres
         tuner = RandomSearch(
@@ -76,22 +77,8 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
 
         # Prédire le prochain tuple en utilisant les meilleurs hyperparamètres actuels
         next_tuple = predict_next_tuple(last_row, best_hps)
-
-        print(f"Itération {iteration}, Activation: {activation} - Prédiction pour le prochain tuple : {next_tuple}")
-
-        # Calculer la précision (à adapter selon le type de problème)
-
-        # Calculer la précision (à adapter selon le type de problème)
-        current_directory = os.getcwd()
-        files = os.listdir(current_directory)
-        weight_files = [file for file in files if file.startswith('model_weights_iteration_')]
-        latest_weight_file = max(weight_files, key=lambda x: int(x.split('_')[-1].split('.')[0]))
         
-        # Chargez les poids du modèle à partir du fichier le plus récent
-        model.load_weights(os.path.join(current_directory, latest_weight_file))
-        accuracy = model.evaluate(X, y, verbose=0)  # Évaluez le modèle sur vos données
-        mse = accuracy[0]
-
+        print(f"Itération {iteration}, Activation: {activation} - Prédiction pour le prochain tuple : {next_tuple}")
         print(f"Précision pour l'itération {iteration}, Activation: {activation}, Précision: {accuracy:.2f}")
 
         if accuracy > best_accuracy_for_activation:
