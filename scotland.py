@@ -3,7 +3,6 @@ from tensorflow import keras
 from data import read_euromillions_data
 from kerastuner.tuners import RandomSearch
 from parameter import update_batch_size  # Importez la fonction depuis parameter.py
-from kerastuner.engine.hyperparameters import HyperParameters
 
 # Charger les données en utilisant la fonction read_euromillions_data
 euromillions_data = read_euromillions_data('euromillions.csv')
@@ -37,16 +36,15 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
 
         # Définir une fonction pour prédire un tuple de 5 numéros
         def predict_next_tuple(last_tuple, hps):
-            # Utilisez ces hyperparamètres pour la création du modèle
+            # Construire le modèle ANN avec les hyperparamètres actuels
             activation = hps.get('activation')
             regularization = hps.get('regularization')
             learning_rate = hps.get('learning_rate')
 
-            # Construire le modèle ANN avec les hyperparamètres actuels
             model = keras.Sequential([
                 keras.layers.Dense(hp.Int('units', min_value=32, max_value=512, step=32), activation=activation, input_shape=(5,)),
                 keras.layers.Dense(hp.Int('units', min_value=32, max_value=512, step=32), activation=activation),
-                keras.layers.Dense(5)  # 5 sorties pour prédire les 5 numéros
+                keras.layers.Dense(5)
             ])
 
             # Compiler le modèle
@@ -73,7 +71,7 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
         )
 
         # Chercher les meilleurs hyperparamètres pour cette itération
-        tuner.search(last_row, num_trials=10)  # Effectuer la recherche d'hyperparamètres
+        tuner.search(last_row, num_trials=10)
 
         # Obtenir les meilleurs hyperparamètres de la recherche
         best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
