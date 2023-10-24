@@ -19,7 +19,7 @@ batch_size = 1
 # Liste des fonctions d'activation à tester
 activation_functions = ['sigmoid', 'tanh']
 
-while best_accuracy < 0.3:  # Le seuil est de 30%
+while best_accuracy < 0.8:  # Le seuil est de 80%
     iteration += 1
 
     # Sélectionner la dernière ligne du CSV
@@ -58,7 +58,7 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
             accuracy = model.evaluate(X, y, verbose=0)  # Évaluez le modèle sur vos données
             mse = accuracy[0]
 
-            return prediction[0], mse
+            return prediction[0], mse, accuracy[0]
 
         # Créer un tuner Keras pour la recherche d'hyperparamètres
         tuner = RandomSearch(
@@ -76,7 +76,7 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
         best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
         # Prédire le prochain tuple en utilisant les meilleurs hyperparamètres actuels
-        next_tuple = predict_next_tuple(last_row, best_hps)
+        next_tuple, mse, accuracy = predict_next_tuple(last_row, best_hps)
         
         print(f"Itération {iteration}, Activation: {activation} - Prédiction pour le prochain tuple : {next_tuple}")
         print(f"Précision pour l'itération {iteration}, Activation: {activation}, Précision: {accuracy:.2f}")
