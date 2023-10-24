@@ -19,6 +19,7 @@ iteration = 0
 batch_size = 1
 hp = HyperParameters()
 hp.Choice('activation', values=['relu', 'leaky_relu', 'sigmoid', 'tanh'])
+activation_fn = relu
 
 while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
@@ -67,6 +68,7 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
         project_name='my_project'
     )
 
+    tuner.search_space.update(hp.Choice('activation', values=['relu', 'leaky_relu', 'sigmoid', 'tanh']))
     # Chercher les meilleurs hyperparamètres pour cette itération
     tuner.search(last_row, num_trials=10)  # Effectuer la recherche d'hyperparamètres
 
