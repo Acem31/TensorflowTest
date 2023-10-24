@@ -4,7 +4,6 @@ from data import read_euromillions_data
 from kerastuner.tuners import RandomSearch
 from kerastuner.engine.hyperparameters import HyperParameters
 from parameter import update_batch_size  # Importez la fonction depuis parameter.py
-from tensorflow.keras.activations import relu, sigmoid, tanh
 from tensorflow.keras.layers import Dense
 
 # Charger les données en utilisant la fonction read_euromillions_data
@@ -19,7 +18,6 @@ iteration = 0
 batch_size = 1
 hp = HyperParameters()
 hp.Choice('activation', values=['relu', 'leaky_relu', 'sigmoid', 'tanh'])
-activation_fn = relu
 
 while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
@@ -30,15 +28,7 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
     # Définir une fonction pour prédire un tuple de 5 numéros
     def predict_next_tuple(hps):
         # Construire le modèle ANN avec les hyperparamètres actuels
-        if hps.get('activation') == 'relu':
-            activation_fn = ReLU()
-        elif hps.get('activation') == 'leaky_relu':
-            activation_fn = LeakyReLU()
-        elif hps.get('activation') == 'sigmoid':
-            activation_fn = Sigmoid()
-        else:
-            activation_fn = Tanh()
-            
+        activation_fn = hps.get('activation')  # Obtenir la fonction d'activation à partir des hyperparamètres
         model = keras.Sequential([
             keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation=activation_fn, input_shape=(5,)),
             keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation=activation_fn),
