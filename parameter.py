@@ -6,6 +6,18 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from data import read_euromillions_data
 
+def update_batch_size(current_accuracy, hyperparameters):
+    # Mettez en place votre logique pour calculer la nouvelle valeur de batch_size
+    # en fonction de la précision actuelle et des hyperparamètres.
+    # Par exemple, vous pouvez doubler la taille du lot si la précision actuelle
+    # est supérieure à un seuil donné.
+    if current_accuracy > 0.7:  # Exemple de seuil de précision
+        new_batch_size = hyperparameters['batch_size'] * 2
+    else:
+        new_batch_size = hyperparameters['batch_size']
+
+    return new_batch_size
+
 # Charger les données en utilisant la fonction read_euromillions_data
 euromillions_data = read_euromillions_data('euromillions.csv')
 
