@@ -31,7 +31,6 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
         # Définir une fonction pour prédire un tuple de 5 numéros
         def predict_next_tuple(last_tuple, hps):
             # Extraire les valeurs optimisées d'hyperparamètres
-            best_activation = hps.get('activation')
             best_units = hps.get('units')
             best_learning_rate = hps.get('learning_rate')
             # Construire le modèle ANN avec les hyperparamètres actuels
