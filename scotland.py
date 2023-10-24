@@ -3,6 +3,7 @@ from tensorflow import keras
 from data import read_euromillions_data
 from kerastuner.tuners import RandomSearch
 from parameter import update_batch_size  # Importez la fonction depuis parameter.py
+from kerastuner.engine.hyperparameters import HyperParameters
 
 # Charger les données en utilisant la fonction read_euromillions_data
 euromillions_data = read_euromillions_data('euromillions.csv')
@@ -28,17 +29,28 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
     best_accuracy_for_activation = 0.0
 
     for activation in activation_functions:
+        # Créez un objet HyperParameters pour définir les hyperparamètres
+        hp = HyperParameters()
+        hp.Choice('activation', values=[activation])
+        hp.Choice('regularization', values=[None, 'l1', 'l2'])
+        hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])
+
         # Définir une fonction pour prédire un tuple de 5 numéros
         def predict_next_tuple(last_tuple, hps):
+            # Utilisez ces hyperparamètres pour la création du modèle
+            activation = hps.get('activation')
+            regularization = hps.get('regularization')
+            learning_rate = hps.get('learning_rate')
+
             # Construire le modèle ANN avec les hyperparamètres actuels
             model = keras.Sequential([
-                keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation=activation, input_shape=(5,)),
-                keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation=activation),
+                keras.layers.Dense(hp.Int('units', min_value=32, max_value=512, step=32), activation=activation, input_shape=(5,)),
+                keras.layers.Dense(hp.Int('units', min_value=32, max_value=512, step=32), activation=activation),
                 keras.layers.Dense(5)  # 5 sorties pour prédire les 5 numéros
             ])
 
             # Compiler le modèle
-            model.compile(optimizer=keras.optimizers.Adam(learning_rate=hps.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])),
+            model.compile(optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
                           loss='mse', metrics=['mae'])
 
             # Entraîner le modèle avec le nombre d'epochs actuel
