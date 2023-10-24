@@ -3,6 +3,7 @@ from tensorflow import keras
 from data import read_euromillions_data
 from kerastuner.tuners import RandomSearch
 from parameter import update_batch_size  # Importez la fonction depuis parameter.py
+from tensorflow.keras.layers import ReLU, LeakyReLU, Sigmoid, Tanh
 
 # Charger les données en utilisant la fonction read_euromillions_data
 euromillions_data = read_euromillions_data('euromillions.csv')
@@ -14,6 +15,7 @@ best_accuracy = 0.0
 iteration = 0
 
 batch_size = 1
+hp.Choice('activation', values=['relu', 'leaky_relu', 'sigmoid', 'tanh'])
 
 while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
@@ -24,9 +26,18 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
     # Définir une fonction pour prédire un tuple de 5 numéros
     def predict_next_tuple(last_tuple, hps):
         # Construire le modèle ANN avec les hyperparamètres actuels
+        if hps.get('activation') == 'relu':
+            activation_fn = ReLU()
+        elif hps.get('activation') == 'leaky_relu':
+            activation_fn = LeakyReLU()
+        elif hps.get('activation') == 'sigmoid':
+            activation_fn = Sigmoid()
+        else:
+            activation_fn = Tanh()
+            
         model = keras.Sequential([
-            keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation='relu', input_shape=(5,)),
-            keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation='relu'),
+            keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation=activation_fn, input_shape=(5,)),
+            keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation=activation_fn),
             keras.layers.Dense(5)  # 5 sorties pour prédire les 5 numéros
         ])
 
