@@ -65,10 +65,10 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
         objective='mae',
         max_trials=10,
         directory='my_dir',
-        project_name='my_project'
+        project_name='my_project',
+        hyperparameters=hp  # Passer l'objet HyperParameters avec les choix d'hyperparamètres
     )
 
-    tuner.search_space.update(hp.Choice('activation', values=['relu', 'leaky_relu', 'sigmoid', 'tanh']))
     # Chercher les meilleurs hyperparamètres pour cette itération
     tuner.search(last_row, num_trials=10)  # Effectuer la recherche d'hyperparamètres
 
