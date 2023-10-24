@@ -2,6 +2,7 @@ import numpy as np
 from tensorflow import keras
 from data import read_euromillions_data
 from kerastuner.tuners import RandomSearch
+from parameter import update_batch_size  # Importez la fonction depuis parameter.py
 
 # Charger les données en utilisant la fonction read_euromillions_data
 euromillions_data = read_euromillions_data('euromillions.csv')
@@ -11,6 +12,8 @@ best_accuracy = 0.0
 
 # Initialisation du nombre d'itérations
 iteration = 0
+
+batch_size = 1
 
 while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
@@ -34,7 +37,7 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
         # Entraîner le modèle avec le nombre d'epochs actuel
         X = np.array(euromillions_data[:-1])
         y = np.array(euromillions_data[1:])
-        model.fit(X, y, epochs=iteration * 50, batch_size=1, verbose=2)
+        model.fit(X, y, epochs=iteration * 50, batch_size=batch_size, verbose=2)
 
         # Prédire le prochain tuple
         prediction = model.predict(last_tuple.reshape(1, 5))
