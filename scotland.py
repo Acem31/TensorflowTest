@@ -3,6 +3,7 @@ from tensorflow import keras
 from data import read_euromillions_data
 from kerastuner.tuners import RandomSearch
 from parameter import update_batch_size  # Importez la fonction depuis parameter.py
+import os
 
 # Charger les données en utilisant la fonction read_euromillions_data
 euromillions_data = read_euromillions_data('euromillions.csv')
@@ -17,6 +18,7 @@ batch_size = 1
 
 # Liste des fonctions d'activation à tester
 activation_functions = ['sigmoid', 'tanh']
+model = None
 
 while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
@@ -49,6 +51,8 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
             y = np.array(euromillions_data[1:])
             model.fit(X, y, epochs=iteration * 50, batch_size=batch_size, verbose=2)
 
+            model.save_weights(f'model_weights_iteration_{iteration}.h5')
+
             # Prédire le prochain tuple
             prediction = model.predict(last_tuple.reshape(1, 5))
 
@@ -75,12 +79,18 @@ while best_accuracy < 0.3:  # Le seuil est de 30%
         print(f"Itération {iteration}, Activation: {activation} - Prédiction pour le prochain tuple : {next_tuple}")
 
         # Calculer la précision (à adapter selon le type de problème)
-        # Par exemple, si vous effectuez une classification, utilisez accuracy_score
+
+        current_directory = os.getcwd()
+        files = os.listdir(current_directory)
+        weight_files = [file for file in files if file.startswith('model_weights_iteration_')]
+        latest_weight_file = max(weight_files)
+
         # Pour la régression, utilisez une métrique appropriée
+        model.load_weights(os.path.join(current_directory, latest_weight_file))
         accuracy = model.evaluate(X, y, verbose=0)  # Évaluez le modèle sur vos données
         mse = accuracy[0]
 
-        print(f"Précision pour l'itération {iteration}, Activation: {activation} : {accuracy:.2f}")
+        print(f"Précision pour l'itération {iteration}, Activation: {activation}, Précision: {accuracy:.2f}")
 
         if accuracy > best_accuracy_for_activation:
             best_accuracy_for_activation = accuracy
