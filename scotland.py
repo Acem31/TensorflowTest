@@ -16,7 +16,7 @@ iteration = 0
 batch_size = 1
 
 # Liste des fonctions d'activation à tester
-activation_functions = ['relu', 'leaky_relu', 'sigmoid', 'tanh']
+activation_functions = ['sigmoid', 'tanh']
 
 while best_accuracy < 0.3:  # Le seuil est de 30%
     iteration += 1
