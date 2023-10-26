@@ -30,7 +30,7 @@ def objective(trial):
     max_depth = trial.suggest_int('max_depth', 5, 50)
     min_samples_split = trial.suggest_float('min_samples_split', 0.1, 1.0)
     min_samples_leaf = trial.suggest_float('min_samples_leaf', 0.1, 0.5)
-    max_features = trial.suggest_categorical('max_features', ['auto', 'sqrt', 'log2'])
+    max_features = trial.suggest_categorical('max_features', [None, 'sqrt', 'log2'])
     bootstrap = trial.suggest_categorical('bootstrap', [True, False])
     criterion = trial.suggest_categorical('criterion', ['poisson', 'absolute_error', 'friedman_mse', 'squared_error'])
     n_jobs = 5  # Utiliser 5 cœurs
