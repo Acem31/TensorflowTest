@@ -3,6 +3,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from bayes_opt import BayesianOptimization
+from bayes_opt.util import UtilityFunction
 
 # Charger les données depuis le fichier CSV (5 premières colonnes)
 data = pd.read_csv('euromillions.csv', delimiter=';', usecols=range(5))
@@ -42,8 +43,8 @@ optimizer = BayesianOptimization(f=optimize_rf, pbounds=pbounds, random_state=42
 # Boucle pour optimiser les hyperparamètres jusqu'à atteindre un taux de précision de 50%
 best_accuracy = 0
 while best_accuracy < 0.5:
-    # Optimiser les hyperparamètres
-    optimizer.maximize(init_points=5, n_iter=10, acq='ei')
+    # Optimiser les hyperparamètres en utilisant la méthode "maximize"
+    optimizer.maximize(init_points=5, n_iter=10)
     
     # Obtenir les meilleurs hyperparamètres
     best_params = optimizer.max['params']
