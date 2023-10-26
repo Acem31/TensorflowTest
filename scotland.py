@@ -1,14 +1,13 @@
 import numpy as np
 import pandas as pd
-from sklearn.neighbors import NearestCentroid
+import lightgbm as lgb
+import sklearn.model_selection as ms
 from skopt import BayesSearchCV
-from skopt.space import Real
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 from skopt.space import Real, Integer, Categorical
+from sklearn.metrics import accuracy_score
 
 # Charger les données à partir du CSV
-data = pd.read_csv(euromillions.csv, header=None, delimiter=';')
+data = pd.read_csv('euromillions.csv', header=None, delimiter=';')
 
 # Garder uniquement les 5 premiers numéros de chaque ligne
 data = data.iloc[:, :5]
@@ -17,19 +16,19 @@ data = data.iloc[:, :5]
 X = data.iloc[:, :-1]
 y = data.iloc[:, -1]
 
-# Initialiser le modèle LVQ
-model = NearestCentroid()
-
 # Créer un espace d'hyperparamètres pour l'optimisation bayésienne
 param_space = {
-    'shrink_threshold': Real(0.0, 2.0),
-    'n_neighbors': Integer(1, 10),
-    'split_ratio': Real(0.1, 0.9),
-    'initialization_method': Categorical(['random', 'kmeans']),
-    'distance_metric': Categorical(['euclidean', 'manhattan']),
+    'num_leaves': Integer(2, 100),
     'learning_rate': Real(0.01, 0.5),
-    'max_iter': Integer(10, 100),
+    'n_estimators': Integer(10, 200),
+    'subsample': Real(0.1, 1.0),
+    'colsample_bytree': Real(0.1, 1.0),
+    'reg_alpha': Real(0.0, 1.0),
+    'reg_lambda': Real(0.0, 1.0),
 }
+
+# Initialiser le modèle LightGBM
+model = lgb.LGBMClassifier()
 
 # Initialiser l'optimisation bayésienne
 opt = BayesSearchCV(
@@ -45,7 +44,7 @@ accuracy = 0
 
 while accuracy < 0.5:
     # Diviser les données en ensembles d'entraînement et de test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = ms.train_test_split(X, y, test_size=0.2)
 
     # Effectuer l'optimisation bayésienne des hyperparamètres
     opt.fit(X_train, y_train)
@@ -53,7 +52,7 @@ while accuracy < 0.5:
     # Obtenir les meilleurs paramètres
     best_params = opt.best_params_
 
-    # Entraîner le modèle LVQ avec les meilleurs paramètres
+    # Entraîner le modèle LightGBM avec les meilleurs paramètres
     model.set_params(**best_params)
     model.fit(X_train, y_train)
 
@@ -73,7 +72,7 @@ correct_predictions = (prediction == true_numbers).sum()
 precision = correct_predictions / len(true_numbers)
 
 # Afficher les résultats
-print("Modèle LVQ avec les meilleurs hyperparamètres:", best_params)
+print("Modèle LightGBM avec les meilleurs hyperparamètres:", best_params)
 print("Précision du modèle:", accuracy)
 print("Prédiction:", prediction)
 print("Vrais numéros:", true_numbers)
