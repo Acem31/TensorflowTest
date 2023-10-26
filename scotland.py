@@ -44,6 +44,8 @@ def objective(trial):
     accuracy = 1 - mse / np.var(y)
 
     return -mse  # Minimiser l'erreur quadratique moyenne
+    
+predicted_last_value = None  # Initialisation en dehors de la boucle
 
 if __name__ == "__main__":
     file_path = 'euromillions.csv'
