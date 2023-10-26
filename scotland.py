@@ -95,8 +95,8 @@ if __name__ == "__main__":
         print(f"Dernière ligne du CSV : {euromillions_data[-1]}")
     
         # Prédiction du dernier tuple pour l'itération actuelle
-        predicted_last_value = objective(**best_params)
-    
+        predicted_last_value = list(map(int, model.predict([last_tuple])[0]))
+
         print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
         print(f"Score de précision actuel : {best_score * 100}%")
     
