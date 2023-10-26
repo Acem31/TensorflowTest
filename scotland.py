@@ -43,7 +43,7 @@ def objective(n_estimators, max_depth, min_samples_split, min_samples_leaf, max_
 
     # Prédiction du dernier tuple
     last_tuple = X_test[-1]
-    predicted_last_value = model.predict([last_tuple])[0]
+    predicted_last_value = list(map(int, model.predict([last_tuple])[0]))
 
     # Calcul du score
     mse = mean_squared_error([y_test[-1]], [predicted_last_value])
@@ -57,23 +57,23 @@ if __name__ == "__main__":
     file_path = 'euromillions.csv'
     euromillions_data = read_euromillions_data(file_path)
 
-    # Création d'une étude d'optimisation bayésienne
-    optimizer = BayesianOptimization(
-        f=objective,
-        pbounds={
-            "n_estimators": (10, 500),
-            "max_depth": (5, 50),
-            "min_samples_split": (0.1, 1.0),
-            "min_samples_leaf": (0.1, 0.5),
-            "max_features": (1, len(euromillions_data[0])-1),
-            "bootstrap": (0, 1),
-        },
-        random_state=42,
-    )
-    
     best_score = None
 
     while True:
+        # Création d'une étude d'optimisation bayésienne
+        optimizer = BayesianOptimization(
+            f=objective,
+            pbounds={
+                "n_estimators": (10, 500),
+                "max_depth": (5, 50),
+                "min_samples_split": (0.1, 1.0),
+                "min_samples_leaf": (0.1, 0.5),
+                "max_features": (1, len(euromillions_data[0])-1),
+                "bootstrap": (0, 1),
+            },
+            random_state=42,
+        )
+        
         # Optimisation des hyperparamètres avec BayesianOptimization
         optimizer.maximize(init_points=5, n_iter=10)
         
@@ -95,7 +95,9 @@ if __name__ == "__main__":
         print(f"Dernière ligne du CSV : {euromillions_data[-1]}")
     
         # Prédiction du dernier tuple pour l'itération actuelle
-        # Définition du modèle à l'intérieur de la boucle
+        X = [row[:-1] for row in euromillions_data]
+        y = [row[-1] for row in euromillions_data]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         model = RandomForestRegressor(
             n_estimators=int(best_params["n_estimators"]),
             max_depth=int(best_params["max_depth"]),
@@ -103,10 +105,9 @@ if __name__ == "__main__":
             min_samples_leaf=best_params["min_samples_leaf"],
             max_features=int(best_params["max_features"]),
             bootstrap=bool(best_params["bootstrap"]),
-            n_jobs=5  # Utiliser 5 cœurs
+            n_jobs=5
         )
         model.fit(X_train, y_train)
-        
         predicted_last_value = list(map(int, model.predict([last_tuple])[0]))
 
         print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
