@@ -26,13 +26,26 @@ def objective(trial):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Paramètres à optimiser
-    n_estimators = trial.suggest_int('n_estimators', 10, 500)
-    max_depth = trial.suggest_int('max_depth', 5, 50)
+    n_estimators = trial.suggest_int('n_estimators', 10, 1000)
+    max_depth = trial.suggest_int('max_depth', 5, 500)
     min_samples_split = trial.suggest_float('min_samples_split', 0.1, 1.0)
+    min_samples_leaf = trial.suggest_float('min_samples_leaf', 0.1, 1.0)
+    max_features = trial.suggest_categorical('max_features', ['auto', 'sqrt', 'log2'])
+    bootstrap = trial.suggest_categorical('bootstrap', [True, False])
+    criterion = trial.suggest_categorical('criterion', ['mse', 'mae'])
+    n_jobs = 5
 
     # Initialisation du modèle de régression avec les paramètres suggérés par Optuna
-    model = RandomForestRegressor(n_estimators=n_estimators, max_depth=max_depth, min_samples_split=min_samples_split)
-
+    model = RandomForestRegressor(
+        n_estimators=n_estimators,
+        max_depth=max_depth,
+        min_samples_split=min_samples_split,
+        min_samples_leaf=min_samples_leaf,
+        max_features=max_features,
+        bootstrap=bootstrap,
+        criterion=criterion,
+        n_jobs=n_jobs
+    )
     # Entraînement du modèle
     model.fit(X_train, y_train)
 
@@ -58,28 +71,32 @@ if __name__ == "__main__":
     best_score = None
 
     while True:
-        # Optimisation des hyperparamètres avec Optuna
+        # Optimisation des hyperparamètres avec Optuna sans limite de trials
         study.optimize(objective)
-
+    
         best_params = study.best_params
         current_best_score = -study.best_value
-
+    
         print(f"Meilleurs hyperparamètres : {best_params}")
         print(f"Meilleur score de précision : {current_best_score * 100}%")
-
+    
         # Si le score n'augmente pas, vous pouvez définir une condition d'arrêt personnalisée
         if best_score is not None and current_best_score <= best_score:
             print("Arrêt de l'optimisation : le score n'augmente plus.")
             break
-
+    
         best_score = current_best_score
-
-    # Afficher la dernière ligne du CSV
-    last_actual_value = euromillions_data[-1][-1]
-    print(f"Dernière ligne du CSV : {euromillions_data[-1]}")
-
-    # Prédiction du dernier tuple pour l'itération actuelle
-    predicted_last_value = predict_last_tuple(euromillions_data)[0]
-
-    print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
-    print(f"Score de précision actuel : {best_score * 100}%")
+    
+        # Afficher la dernière ligne du CSV
+        last_actual_value = euromillions_data[-1][-1]
+        print(f"Dernière ligne du CSV : {euromillions_data[-1]}")
+    
+        # Prédiction du dernier tuple pour l'itération actuelle
+        predicted_last_value = predict_last_tuple(euromillions_data)[0]
+    
+        print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
+        print(f"Score de précision actuel : {best_score * 100}%")
+    
+    # Afficher les meilleurs hyperparamètres une fois la boucle terminée
+    print("Meilleurs hyperparamètres finaux :")
+    print(best_params)
