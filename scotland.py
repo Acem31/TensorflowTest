@@ -3,7 +3,7 @@ import random
 import numpy as np
 from bayes_opt import BayesianOptimization
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier  # Utilisez un classificateur au lieu d'un régresseur
 from sklearn.metrics import mean_squared_error
 
 # Fonction pour lire les données du fichier CSV
@@ -28,7 +28,7 @@ def objective(n_estimators, max_depth, min_samples_split, min_samples_leaf, max_
     n_jobs = 5
 
     # Initialisation du modèle de régression avec les paramètres suggérés par BayesianOptimization
-    model = RandomForestRegressor(
+    model = RandomForestClassifier(
         n_estimators=int(n_estimators),
         max_depth=int(max_depth),
         min_samples_split=min_samples_split,
@@ -43,7 +43,7 @@ def objective(n_estimators, max_depth, min_samples_split, min_samples_leaf, max_
 
     # Prédiction du dernier tuple
     last_tuple = X_test[-1]
-    predicted_last_value = int(model.predict([last_tuple])[0])
+    predicted_last_value = list(map(int, model.predict([last_tuple])))
 
     # Calcul du score
     mse = mean_squared_error([y_test[-1]], [predicted_last_value])
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         X = [row[:-1] for row in euromillions_data]
         y = [row[-1] for row in euromillions_data]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        model = RandomForestRegressor(
+        model = RandomForestClassifier(
             n_estimators=int(best_params["n_estimators"]),
             max_depth=int(best_params["max_depth"]),
             min_samples_split=best_params["min_samples_split"],
@@ -109,7 +109,7 @@ if __name__ == "__main__":
             n_jobs=5
         )
         model.fit(X_train, y_train)
-        predicted_last_value = int(model.predict([last_tuple])[0])
+        predicted_last_value = list(map(int, model.predict([last_tuple])))
 
         print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
         print(f"Score de précision actuel : {best_score * 100}%")
