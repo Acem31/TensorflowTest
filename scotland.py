@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 # Charger les données depuis le CSV
-data = pd.read_csv('euromillions.csv', header=None, sep=';')
+data = pd read_csv('euromillions.csv', header=None, sep=';')
 
 # Sélectionner les 5 premières colonnes
 data = data.iloc[:, :5]
@@ -20,15 +20,15 @@ y_true = data.iloc[-1, -1]
 # Initialiser le taux de précision à 0
 accuracy = 0
 
+# Nombre de nœuds (num_nodes)
+num_nodes = 10
+
 # Boucle d'apprentissage et d'optimisation
 while accuracy < 0.5:
     # Diviser les données en ensembles d'entraînement et de test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     with pm.Model() as bbn_model:
-        # Hyperparamètre pour le nombre de nœuds
-        num_nodes = pm.DiscreteUniform('num_nodes', lower=5, upper=20)
-
         # Créer des nœuds/variables en fonction de num_nodes
         variables = [pm.Normal(f'variable_{i}', mu=0, sigma=1) for i in range(num_nodes)]
 
