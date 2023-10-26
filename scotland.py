@@ -66,13 +66,14 @@ while best_accuracy < 0.5:
     
     # Faire une prédiction sur la dernière ligne
     prediction = best_model.predict(last_row)
+    predicted_numbers = prediction[0, :5]
     
     # Calculer le taux de précision
     last_accuracy = accuracy_score([actual_result], prediction)
     
     # Afficher le taux de précision de la prédiction
     print("Taux de précision de la prédiction:", last_accuracy)
-    print("Prédiction du modèle:", prediction)
+    print("Prédiction des 5 premiers numéros:", predicted_numbers)
     
     # Mettre à jour le meilleur taux de précision
     best_accuracy = max(best_accuracy, last_accuracy)
