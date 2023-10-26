@@ -1,10 +1,9 @@
 import csv
-import random
 import numpy as np
 from bayes_opt import BayesianOptimization
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier  # Utilisez un classificateur au lieu d'un régresseur
-from sklearn.metrics import mean_squared_error
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
 
 # Fonction pour lire les données du fichier CSV
 def read_euromillions_data(file_path):
@@ -12,22 +11,21 @@ def read_euromillions_data(file_path):
     with open(file_path, 'r') as file:
         reader = csv.reader(file, delimiter=';')
         for row in reader:
-            numbers = list(map(int, row[:5]))
-            data.append(numbers)
+            numbers = list(map(int, row[:5]))  # 5 premières colonnes sont les numéros
+            result = int(row[5])  # Dernière colonne est le résultat
+            data.append((numbers, result))
     return data
 
 # Fonction objectif pour BayesianOptimization
 def objective(n_estimators, max_depth, min_samples_split, min_samples_leaf, max_features, bootstrap):
     # Séparation des données en caractéristiques (X) et cible (y)
-    X = [row[:-1] for row in euromillions_data]
-    y = [row[-1] for row in euromillions_data]
+    X = [row[0] for row in data]  # Caractéristiques (les numéros)
+    y = [row[1] for row in data]  # Cible (résultat)
 
     # Division des données en ensembles d'entraînement et de test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    n_jobs = 5
-
-    # Initialisation du modèle de régression avec les paramètres suggérés par BayesianOptimization
+    # Initialisation du modèle de classification avec les hyperparamètres suggérés par BayesianOptimization
     model = RandomForestClassifier(
         n_estimators=int(n_estimators),
         max_depth=int(max_depth),
@@ -35,32 +33,31 @@ def objective(n_estimators, max_depth, min_samples_split, min_samples_leaf, max_
         min_samples_leaf=min_samples_leaf,
         max_features=int(max_features),
         bootstrap=bool(bootstrap),
-        n_jobs=n_jobs
+        random_state=42
     )
-    
-    # Entraînement du modèle
     model.fit(X_train, y_train)
 
-    # Prédiction du dernier tuple
-    last_tuple = X_test[-1]
-    predicted_last_value = list(map(int, model.predict([last_tuple])))
+    # Prédiction sur l'ensemble de test
+    y_pred = model.predict(X_test)
 
-    # Calcul du score
-    mse = mean_squared_error([y_test[-1]], [predicted_last_value])
-    accuracy = 1 - mse / np.var(y)
+    # Évaluation du modèle (précision)
+    accuracy = accuracy_score(y_test, y_pred)
 
-    return -mse  # Minimiser l'erreur quadratique moyenne
+    return accuracy
 
-predicted_last_value = None  # Initialisation en dehors de la boucle
+if __name__ == "__main":
+    # Lecture des données
+    data = read_euromillions_data('euromillions.csv')
 
-if __name__ == "__main__":
-    file_path = 'euromillions.csv'
-    euromillions_data = read_euromillions_data(file_path)
+    # Initialisation des variables
+    target_accuracy = 0.5  # Taux de précision cible
+    best_accuracy = 0.0  # Initialisation
+    best_params = None
+    iteration = 0
 
-    best_score = None
-    last_tuple = euromillions_data[-1][:-1]
+    while best_accuracy < target_accuracy:
+        iteration += 1
 
-    while True:
         # Création d'une étude d'optimisation bayésienne
         optimizer = BayesianOptimization(
             f=objective,
@@ -69,35 +66,29 @@ if __name__ == "__main__":
                 "max_depth": (5, 50),
                 "min_samples_split": (0.1, 1.0),
                 "min_samples_leaf": (0.1, 0.5),
-                "max_features": (1, len(euromillions_data[0])-1),
+                "max_features": (1, len(data[0][0])),
                 "bootstrap": (0, 1),
             },
             random_state=42,
         )
-        
+
         # Optimisation des hyperparamètres avec BayesianOptimization
         optimizer.maximize(init_points=5, n_iter=10)
-        
+
         best_params = optimizer.max['params']
-        current_best_score = -optimizer.max['target']
-        
-        print(f"Meilleurs hyperparamètres : {best_params}")
-        print(f"Meilleur score de précision : {current_best_score * 100}%")
-    
-        # Si le score n'augmente pas, vous pouvez définir une condition d'arrêt personnalisée
-        if best_score is not None and current_best_score <= best_score:
-            print("Arrêt de l'optimisation : le score n'augmente plus.")
-            break
-    
-        best_score = current_best_score
-    
+        best_accuracy = optimizer.max['target']
+
+        print(f"Iteration {iteration}:")
+        print("Meilleurs hyperparamètres :", best_params)
+        print("Meilleure précision :", best_accuracy * 100, "%")
+
         # Afficher la dernière ligne du CSV
-        last_actual_value = euromillions_data[-1][-1]
-        print(f"Dernière ligne du CSV : {euromillions_data[-1]}")
-    
-        # Prédiction du dernier tuple pour l'itération actuelle
-        X = [row[:-1] for row in euromillions_data]
-        y = [row[-1] for row in euromillions_data]
+        last_row = data[-1]
+        print("Dernière ligne du CSV :", last_row[0])
+
+        # Prédiction avec les hyperparamètres optimaux
+        X = [row[0] for row in data]
+        y = [row[1] for row in data]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         model = RandomForestClassifier(
             n_estimators=int(best_params["n_estimators"]),
@@ -106,14 +97,10 @@ if __name__ == "__main__":
             min_samples_leaf=best_params["min_samples_leaf"],
             max_features=int(best_params["max_features"]),
             bootstrap=bool(best_params["bootstrap"]),
-            n_jobs=5
+            random_state=42
         )
         model.fit(X_train, y_train)
-        predicted_last_value = list(map(int, model.predict([last_tuple])))
+        predicted_value = model.predict([last_row[0]])
+        print("Prédiction avec les hyperparamètres optimaux :", predicted_value)
 
-        print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
-        print(f"Score de précision actuel : {best_score * 100}%")
-    
-    # Afficher les meilleurs hyperparamètres une fois la boucle terminée
-    print("Meilleurs hyperparamètres finaux :")
-    print(best_params)
+    print("Taux de précision cible atteint !")
