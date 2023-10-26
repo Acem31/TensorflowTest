@@ -1,92 +1,66 @@
+import csv
+import random
 import numpy as np
-from tensorflow import keras
-from data import read_euromillions_data
-from kerastuner.tuners import RandomSearch
-from parameter import update_batch_size  # Importez la fonction depuis parameter.py
-import os
+import optuna
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
 
-# Charger les données en utilisant la fonction read_euromillions_data
-euromillions_data = read_euromillions_data('euromillions.csv')
+# Fonction pour lire les données du fichier CSV
+def read_euromillions_data(file_path):
+    data = []
+    with open(file_path, 'r') as file:
+        reader = csv.reader(file, delimiter=';')
+        for row in reader:
+            numbers = list(map(int, row[:5]))
+            data.append(numbers)
+    return data
 
-# Initialisation du taux de précision
-best_accuracy = 0.0
+# Fonction objectif pour Optuna
+def objective(trial):
+    # Séparation des données en caractéristiques (X) et cible (y)
+    X = [row[:-1] for row in euromillions_data]
+    y = [row[-1] for row in euromillions_data]
 
-# Initialisation du nombre d'itérations
-iteration = 0
+    # Division des données en ensembles d'entraînement et de test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-batch_size = 1
+    # Paramètres à optimiser
+    n_estimators = trial.suggest_int('n_estimators', 50, 200)
+    max_depth = trial.suggest_int('max_depth', 10, 30)
 
-# Liste des fonctions d'activation à tester
-activation_functions = ['sigmoid', 'tanh']
+    # Initialisation du modèle de régression avec les paramètres suggérés par Optuna
+    model = RandomForestRegressor(n_estimators=n_estimators, max_depth=max_depth)
 
-while best_accuracy < 0.8:  # Le seuil est de 80%
-    iteration += 1
+    # Entraînement du modèle
+    model.fit(X_train, y_train)
 
-    # Sélectionner la dernière ligne du CSV
-    last_row = np.array(euromillions_data[-1][:5])
+    # Prédiction du dernier tuple
+    last_tuple = X_test[-1]
+    predicted_last_value = model.predict([last_tuple])[0]
 
-    best_activation = None
-    best_accuracy_for_activation = 0.0
+    # Calcul du score
+    mse = mean_squared_error([y_test[-1]], [predicted_last_value])
+    accuracy = 1 - mse / np.var(y)
 
-    for activation in activation_functions:
-        # Définir une fonction pour prédire un tuple de 5 numéros
-        def predict_next_tuple(last_tuple, hps):
-            # Extraire les valeurs optimisées d'hyperparamètres
-            best_units = hps.get('units')
-            best_learning_rate = hps.get('learning_rate')
-            # Construire le modèle ANN avec les hyperparamètres actuels
-            model = keras.Sequential([
-                keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation=activation, input_shape=(5,)),
-                keras.layers.Dense(hps.Int('units', min_value=32, max_value=512, step=32), activation=activation),
-                keras.layers.Dense(5)  # 5 sorties pour prédire les 5 numéros
-            ])
+    return -mse  # Minimiser l'erreur quadratique moyenne
 
-            # Compiler le modèle
-            model.compile(optimizer=keras.optimizers.Adam(learning_rate=hps.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])),
-                          loss='mse', metrics=['mae'])
+if __name__ == "__main__":
+    file_path = 'euromillions.csv'
+    euromillions_data = read_euromillions_data(file_path)
 
-            # Entraîner le modèle avec le nombre d'epochs actuel
-            X = np.array(euromillions_data[:-1])
-            y = np.array(euromillions_data[1:])
-            model.fit(X, y, epochs=iteration * 50, batch_size=batch_size, verbose=2)
+    # Création d'une étude Optuna
+    study = optuna.create_study(direction='minimize')
 
-            model.save_weights(f'model_weights_iteration_{iteration}.h5')
+    while True:
+        # Optimisation des hyperparamètres avec Optuna
+        study.optimize(objective, n_trials=100)
 
-            # Prédire le prochain tuple
-            prediction = model.predict(last_tuple.reshape(1, 5))
+        best_params = study.best_params
+        best_score = -study.best_value
 
-            accuracy = model.evaluate(X, y, verbose=0)  # Évaluez le modèle sur vos données
-            mse = accuracy[0]
+        print(f"Meilleurs hyperparamètres : {best_params}")
+        print(f"Meilleur score de précision : {best_score * 100}%")
 
-            return prediction[0], mse, accuracy[0]
-
-        # Créer un tuner Keras pour la recherche d'hyperparamètres
-        tuner = RandomSearch(
-            predict_next_tuple,
-            objective='mae',
-            max_trials=10,
-            directory='my_dir',
-            project_name='my_project'
-        )
-
-        # Chercher les meilleurs hyperparamètres pour cette itération
-        tuner.search(last_row, num_trials=10)  # Effectuer la recherche d'hyperparamètres
-
-        # Obtenir les meilleurs hyperparamètres de la recherche
-        best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
-
-        # Prédire le prochain tuple en utilisant les meilleurs hyperparamètres actuels
-        next_tuple, mse, accuracy = predict_next_tuple(last_row, best_hps)
-        
-        print(f"Itération {iteration}, Activation: {activation} - Prédiction pour le prochain tuple : {next_tuple}")
-        print(f"Précision pour l'itération {iteration}, Activation: {activation}, Précision: {accuracy:.2f}")
-
-        if accuracy > best_accuracy_for_activation:
-            best_accuracy_for_activation = accuracy
-            best_activation = activation
-
-    if best_accuracy_for_activation > best_accuracy:
-        best_accuracy = best_accuracy_for_activation
-        best_activation_final = best_activation
-
-print(f"Taux de précision atteint : {best_accuracy:.2f} avec Activation: {best_activation_final}")
+        if best_score >= 0.5:
+            break
