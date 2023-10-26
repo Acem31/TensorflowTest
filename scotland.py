@@ -59,6 +59,8 @@ def objective(n_estimators, max_depth, min_samples_split, min_samples_leaf, max_
 if __name__ == "__main__":
     file_path = 'euromillions.csv'
     euromillions_data = read_euromillions_data(file_path)
+    X = [row[:-1] for row in euromillions_data]
+    y_test = create_target_columns(euromillions_data, num)  # Déplacez la définition de y_test à l'extérieur de la boucle
 
     best_score = None
     last_tuple = euromillions_data[-1][:-1]
