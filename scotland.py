@@ -72,6 +72,7 @@ while best_accuracy < 0.5:
     
     # Afficher le taux de précision de la prédiction
     print("Taux de précision de la prédiction:", last_accuracy)
+    print("Prédiction du modèle:", prediction)
     
     # Mettre à jour le meilleur taux de précision
     best_accuracy = max(best_accuracy, last_accuracy)
