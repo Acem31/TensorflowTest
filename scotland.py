@@ -26,11 +26,12 @@ def objective(trial):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Paramètres à optimiser
-    n_estimators = trial.suggest_int('n_estimators', 50, 200)
-    max_depth = trial.suggest_int('max_depth', 10, 30)
+    n_estimators = trial.suggest_int('n_estimators', 10, 500)
+    max_depth = trial.suggest_int('max_depth', 5, 50)
+    min_samples_split = trial.suggest_float('min_samples_split', 0.1, 1.0)
 
     # Initialisation du modèle de régression avec les paramètres suggérés par Optuna
-    model = RandomForestRegressor(n_estimators=n_estimators, max_depth=max_depth)
+    model = RandomForestRegressor(n_estimators=n_estimators, max_depth=max_depth, min_samples_split=min_samples_split)
 
     # Entraînement du modèle
     model.fit(X_train, y_train)
@@ -53,19 +54,25 @@ if __name__ == "__main__":
 
     # Création d'une étude Optuna
     study = optuna.create_study(direction='minimize')
+    
+    best_score = None
 
     while True:
         # Optimisation des hyperparamètres avec Optuna
-        study.optimize(objective, n_trials=100)
+        study.optimize(objective)
 
         best_params = study.best_params
-        best_score = -study.best_value
+        current_best_score = -study.best_value
 
         print(f"Meilleurs hyperparamètres : {best_params}")
-        print(f"Meilleur score de précision : {best_score * 100}%")
+        print(f"Meilleur score de précision : {current_best_score * 100}%")
 
-        if best_score >= 0.5:
+        # Si le score n'augmente pas, vous pouvez définir une condition d'arrêt personnalisée
+        if best_score is not None and current_best_score <= best_score:
+            print("Arrêt de l'optimisation : le score n'augmente plus.")
             break
+
+        best_score = current_best_score
 
     # Afficher la dernière ligne du CSV
     last_actual_value = euromillions_data[-1][-1]
