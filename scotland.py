@@ -1,7 +1,6 @@
 import csv
 import random
 import numpy as np
-import optuna
 from bayes_opt import BayesianOptimization
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
@@ -17,8 +16,8 @@ def read_euromillions_data(file_path):
             data.append(numbers)
     return data
 
-# Fonction objectif pour Optuna
-def objective(trial):
+# Fonction objectif pour BayesianOptimization
+def objective(n_estimators, max_depth, min_samples_split, min_samples_leaf, max_features, bootstrap):
     # Séparation des données en caractéristiques (X) et cible (y)
     X = [row[:-1] for row in euromillions_data]
     y = [row[-1] for row in euromillions_data]
@@ -28,17 +27,17 @@ def objective(trial):
 
     n_jobs = 5
 
-    # Initialisation du modèle de régression avec les paramètres suggérés par Optuna
+    # Initialisation du modèle de régression avec les paramètres suggérés par BayesianOptimization
     model = RandomForestRegressor(
-        n_estimators=n_estimators,
-        max_depth=max_depth,
+        n_estimators=int(n_estimators),
+        max_depth=int(max_depth),
         min_samples_split=min_samples_split,
         min_samples_leaf=min_samples_leaf,
-        max_features=max_features,
-        bootstrap=bootstrap,
-        criterion=criterion,
+        max_features=int(max_features),
+        bootstrap=bool(bootstrap),
         n_jobs=n_jobs
     )
+    
     # Entraînement du modèle
     model.fit(X_train, y_train)
 
@@ -51,7 +50,7 @@ def objective(trial):
     accuracy = 1 - mse / np.var(y)
 
     return -mse  # Minimiser l'erreur quadratique moyenne
-    
+
 predicted_last_value = None  # Initialisation en dehors de la boucle
 
 if __name__ == "__main__":
@@ -96,7 +95,8 @@ if __name__ == "__main__":
         print(f"Dernière ligne du CSV : {euromillions_data[-1]}")
     
         # Prédiction du dernier tuple pour l'itération actuelle
-        predicted_last_value = predict_last_tuple(euromillions_data)[0]
+        last_tuple = euromillions_data[-1][:-1]
+        predicted_last_value = optimizer.max['func'](last_tuple)
     
         print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
         print(f"Score de précision actuel : {best_score * 100}%")
