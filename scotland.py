@@ -5,6 +5,7 @@ from skopt import BayesSearchCV
 from skopt.space import Real
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from skopt.space import Real, Integer, Categorical
 
 # Charger les données à partir du CSV
 data = pd.read_csv(euromillions.csv, header=None, delimiter=';')
