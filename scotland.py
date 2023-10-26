@@ -1,81 +1,73 @@
+import numpy as np
 import pandas as pd
+import pymc3 as pm
+from skopt import BayesSearchCV
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
-from bayes_opt import BayesianOptimization
-from bayes_opt.util import UtilityFunction
 
-# Charger les données depuis le fichier CSV (5 premières colonnes)
-data = pd.read_csv('euromillions.csv', delimiter=';', usecols=range(5))
+# Charger les données depuis le CSV
+data = pd.read_csv('euromillions.csv', header=None, sep=';')
 
-# Définir une fonction pour l'optimisation bayésienne des hyperparamètres
-def optimize_rf(n_estimators, max_depth, min_samples_split, min_samples_leaf):
+# Sélectionner les 5 premières colonnes
+data = data.iloc[:, :5]
+
+# Diviser les données en caractéristiques (X) et cibles (y)
+X = data.iloc[:-1, :-1].values
+y = data.iloc[:-1, -1].values
+X_pred = data.iloc[-1, :-1].values
+y_true = data.iloc[-1, -1]
+
+# Initialiser le taux de précision à 0
+accuracy = 0
+
+# Boucle d'apprentissage et d'optimisation
+while accuracy < 0.5:
     # Diviser les données en ensembles d'entraînement et de test
-    X_train, X_test, y_train, y_test = train_test_split(data.iloc[:, :-1], data.iloc[:, -1], test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Créer le modèle RandomForestClassifier avec les hyperparamètres
-    model = RandomForestClassifier(n_estimators=int(n_estimators), 
-                                  max_depth=int(max_depth), 
-                                  min_samples_split=int(min_samples_split), 
-                                  min_samples_leaf=int(min_samples_leaf), 
-                                  random_state=42)
+    with pm.Model() as bbn_model:
+        # Hyperparamètre pour le nombre de nœuds
+        num_nodes = pm.DiscreteUniform('num_nodes', lower=5, upper=20)
 
-    # Entraîner le modèle
-    model.fit(X_train, y_train)
+        # Créer des nœuds/variables en fonction de num_nodes
+        variables = [pm.Normal(f'variable{i}', mu=0, sigma=1) for i in range(num_nodes)]
+    
+    # Définir les variables observées en fonction des données d'entraînement
+    observations = [pm.Normal(f'observation{i}', mu=variables[i], sigma=0.1, observed=X_train[:, i]) for i in range(num_nodes)]
 
-    # Faire des prédictions sur l'ensemble de test
-    y_pred = model.predict(X_test)
+    # Optimisation des hyperparamètres avec Bayesian Optimization
+    param_space = {
+        'learning_rate': (0.001, 0.1),  # Taux d'apprentissage si applicable
+        'num_iterations': (100, 1000),  # Nombre d'itérations d'apprentissage
+        'regularization_weight': (0.001, 0.1),  # Poids de régularisation
+        'num_mcmc_samples': (100, 1000),  # Nombre d'échantillons MCMC pour l'inférence
+        'threshold': (0.1, 0.9)  # Seuil de décision pour la classification si applicable
+        # Vous pouvez ajouter d'autres hyperparamètres ici
+    }
+
+    bbn_search = BayesSearchCV(bbn_model, param_space, n_iter=50, cv=5, random_state=42)
+
+    # Entraîner le modèle avec les données d'entraînement
+    bbn_search.fit(X_train, y_train)
+
+    # Faire des prédictions sur les données de test
+    y_pred = bbn_search.predict(X_test)
 
     # Calculer le taux de précision
     accuracy = accuracy_score(y_test, y_pred)
-    
-    return accuracy
 
-# Définir les limites des hyperparamètres pour l'optimisation bayésienne
-pbounds = {'n_estimators': (10, 200),
-           'max_depth': (1, 32),
-           'min_samples_split': (2, 20),
-           'min_samples_leaf': (1, 20)}
+    # Faire une prédiction avec le modèle actuel sur les données de prédiction
+    y_pred_current = bbn_search.predict(X_pred.reshape(1, -1))
 
-# Initialiser l'optimiseur bayésien
-optimizer = BayesianOptimization(f=optimize_rf, pbounds=pbounds, random_state=42)
+    # Afficher la prédiction actuelle
+    print("Prédiction actuelle:", y_pred_current)
 
-# Boucle pour optimiser les hyperparamètres jusqu'à atteindre un taux de précision de 50%
-best_accuracy = 0
-while best_accuracy < 0.5:
-    # Optimiser les hyperparamètres en utilisant la méthode "maximize"
-    optimizer.maximize(init_points=5, n_iter=10)
-    
-    # Obtenir les meilleurs hyperparamètres
-    best_params = optimizer.max['params']
-    
-    # Afficher les meilleurs hyperparamètres
-    print("Meilleurs hyperparamètres:", best_params)
-    
-    # Entraîner le modèle avec les meilleurs hyperparamètres sur l'ensemble de données complet
-    best_model = RandomForestClassifier(n_estimators=int(best_params['n_estimators']), 
-                                       max_depth=int(best_params['max_depth']), 
-                                       min_samples_split=int(best_params['min_samples_split']), 
-                                       min_samples_leaf=int(best_params['min_samples_leaf']), 
-                                       random_state=42)
-    best_model.fit(data.iloc[:, :-1], data.iloc[:, -1])
-    
-    # Lire la dernière ligne du CSV pour la prédiction
-    last_row = data.iloc[[-1], :-1]
-    actual_result = data.iloc[-1, -1]
-    
-    # Faire une prédiction sur la dernière ligne
-    prediction = best_model.predict(last_row)
-    predicted_numbers = prediction[0, :5]
-    
-    # Calculer le taux de précision
-    last_accuracy = accuracy_score([actual_result], prediction)
-    
-    # Afficher le taux de précision de la prédiction
-    print("Taux de précision de la prédiction:", last_accuracy)
-    print("Prédiction des 5 premiers numéros:", predicted_numbers)
-    
-    # Mettre à jour le meilleur taux de précision
-    best_accuracy = max(best_accuracy, last_accuracy)
+# Faire une prédiction sur la dernière ligne du CSV
+y_pred_final = bbn_search.predict(X_pred.reshape(1, -1))
 
-print("Objectif de taux de précision atteint (50% ou plus)!")
+# Calculer le taux de précision final
+final_accuracy = accuracy_score([y_true], y_pred_final)
+
+# Afficher les valeurs du modèle et son taux de précision
+print("Modèle BBN entraîné avec succès.")
+print("Taux de précision final : {:.2%}".format(final_accuracy))
