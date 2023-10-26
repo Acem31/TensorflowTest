@@ -30,10 +30,10 @@ while accuracy < 0.5:
         num_nodes = pm.DiscreteUniform('num_nodes', lower=5, upper=20)
 
         # Créer des nœuds/variables en fonction de num_nodes
-        variables = [pm.Normal(f'variable{i}', mu=0, sigma=1) for i in range(num_nodes)]
-    
-    # Définir les variables observées en fonction des données d'entraînement
-    observations = [pm.Normal(f'observation{i}', mu=variables[i], sigma=0.1, observed=X_train[:, i]) for i in range(num_nodes)]
+        variables = [pm.Normal(f'variable_{i}', mu=0, sigma=1) for i in range(num_nodes)]
+
+        # Définir les variables observées en fonction des données d'entraînement
+        observations = [pm.Normal(f'observation_{i}', mu=variables[i], sigma=0.1, observed=X_train[:, i]) for i in range(num_nodes)]
 
     # Optimisation des hyperparamètres avec Bayesian Optimization
     param_space = {
