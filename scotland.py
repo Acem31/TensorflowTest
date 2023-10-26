@@ -95,6 +95,18 @@ if __name__ == "__main__":
         print(f"Dernière ligne du CSV : {euromillions_data[-1]}")
     
         # Prédiction du dernier tuple pour l'itération actuelle
+        # Définition du modèle à l'intérieur de la boucle
+        model = RandomForestRegressor(
+            n_estimators=int(best_params["n_estimators"]),
+            max_depth=int(best_params["max_depth"]),
+            min_samples_split=best_params["min_samples_split"],
+            min_samples_leaf=best_params["min_samples_leaf"],
+            max_features=int(best_params["max_features"]),
+            bootstrap=bool(best_params["bootstrap"]),
+            n_jobs=5  # Utiliser 5 cœurs
+        )
+        model.fit(X_train, y_train)
+        
         predicted_last_value = list(map(int, model.predict([last_tuple])[0]))
 
         print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
