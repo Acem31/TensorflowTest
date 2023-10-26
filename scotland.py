@@ -2,6 +2,7 @@ import csv
 import random
 import numpy as np
 import optuna
+from bayes_opt import BayesianOptimization
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
@@ -25,15 +26,7 @@ def objective(trial):
     # Division des données en ensembles d'entraînement et de test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Paramètres à optimiser
-    n_estimators = trial.suggest_int('n_estimators', 10, 500)
-    max_depth = trial.suggest_int('max_depth', 5, 50)
-    min_samples_split = trial.suggest_float('min_samples_split', 0.1, 1.0)
-    min_samples_leaf = trial.suggest_float('min_samples_leaf', 0.1, 0.5)
-    max_features = trial.suggest_categorical('max_features', [None, 'sqrt', 'log2'])
-    bootstrap = trial.suggest_categorical('bootstrap', [True, False])
-    criterion = trial.suggest_categorical('criterion', ['poisson', 'absolute_error', 'friedman_mse', 'squared_error'])
-    n_jobs = 5  # Utiliser 5 cœurs
+    n_jobs = 5
 
     # Initialisation du modèle de régression avec les paramètres suggérés par Optuna
     model = RandomForestRegressor(
@@ -65,18 +58,29 @@ if __name__ == "__main__":
     file_path = 'euromillions.csv'
     euromillions_data = read_euromillions_data(file_path)
 
-    # Création d'une étude Optuna
-    study = optuna.create_study(direction='minimize')
+    # Création d'une étude d'optimisation bayésienne
+    optimizer = BayesianOptimization(
+        f=objective,
+        pbounds={
+            "n_estimators": (10, 500),
+            "max_depth": (5, 50),
+            "min_samples_split": (0.1, 1.0),
+            "min_samples_leaf": (0.1, 0.5),
+            "max_features": (1, len(euromillions_data[0])-1),
+            "bootstrap": (0, 1),
+        },
+        random_state=42,
+    )
     
     best_score = None
 
     while True:
-        # Optimisation des hyperparamètres avec Optuna sans limite de trials
-        study.optimize(objective)
-    
-        best_params = study.best_params
-        current_best_score = -study.best_value
-    
+        # Optimisation des hyperparamètres avec BayesianOptimization
+        optimizer.maximize(init_points=5, n_iter=10)
+        
+        best_params = optimizer.max['params']
+        current_best_score = -optimizer.max['target']
+        
         print(f"Meilleurs hyperparamètres : {best_params}")
         print(f"Meilleur score de précision : {current_best_score * 100}%")
     
