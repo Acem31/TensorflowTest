@@ -1,73 +1,79 @@
 import numpy as np
 import pandas as pd
-import pymc3 as pm
+from sklearn.neighbors import NearestCentroid
 from skopt import BayesSearchCV
+from skopt.space import Real
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
-# Charger les données depuis le CSV
-data = pd read_csv('euromillions.csv', header=None, sep=';')
+# Charger les données à partir du CSV
+data = pd.read_csv('votre_fichier.csv', header=None, delimiter=';')
 
-# Sélectionner les 5 premières colonnes
+# Garder uniquement les 5 premiers numéros de chaque ligne
 data = data.iloc[:, :5]
 
-# Diviser les données en caractéristiques (X) et cibles (y)
-X = data.iloc[:-1, :-1].values
-y = data.iloc[:-1, -1].values
-X_pred = data.iloc[-1, :-1].values
-y_true = data.iloc[-1, -1]
+# Définir X (caractéristiques) et y (étiquettes)
+X = data.iloc[:, :-1]
+y = data.iloc[:, -1]
 
-# Initialiser le taux de précision à 0
+# Initialiser le modèle LVQ
+model = NearestCentroid()
+
+# Créer un espace d'hyperparamètres pour l'optimisation bayésienne
+param_space = {
+    'shrink_threshold': Real(0.0, 2.0),
+    'n_neighbors': Integer(1, 10),
+    'split_ratio': Real(0.1, 0.9),
+    'initialization_method': Categorical(['random', 'kmeans']),
+    'distance_metric': Categorical(['euclidean', 'manhattan']),
+    'learning_rate': Real(0.01, 0.5),
+    'max_iter': Integer(10, 100),
+}
+
+# Initialiser l'optimisation bayésienne
+opt = BayesSearchCV(
+    model,
+    param_space,
+    n_iter=50,
+    cv=5,
+    scoring='accuracy',
+    random_state=42  # Ajoutez ceci pour rendre les résultats reproductibles
+)
+
 accuracy = 0
 
-# Nombre de nœuds (num_nodes)
-num_nodes = 10
-
-# Boucle d'apprentissage et d'optimisation
 while accuracy < 0.5:
     # Diviser les données en ensembles d'entraînement et de test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-    with pm.Model() as bbn_model:
-        # Créer des nœuds/variables en fonction de num_nodes
-        variables = [pm.Normal(f'variable_{i}', mu=0, sigma=1) for i in range(num_nodes)]
+    # Effectuer l'optimisation bayésienne des hyperparamètres
+    opt.fit(X_train, y_train)
 
-        # Définir les variables observées en fonction des données d'entraînement
-        observations = [pm.Normal(f'observation_{i}', mu=variables[i], sigma=0.1, observed=X_train[:, i]) for i in range(num_nodes)]
+    # Obtenir les meilleurs paramètres
+    best_params = opt.best_params_
 
-    # Optimisation des hyperparamètres avec Bayesian Optimization
-    param_space = {
-        'learning_rate': (0.001, 0.1),  # Taux d'apprentissage si applicable
-        'num_iterations': (100, 1000),  # Nombre d'itérations d'apprentissage
-        'regularization_weight': (0.001, 0.1),  # Poids de régularisation
-        'num_mcmc_samples': (100, 1000),  # Nombre d'échantillons MCMC pour l'inférence
-        'threshold': (0.1, 0.9)  # Seuil de décision pour la classification si applicable
-        # Vous pouvez ajouter d'autres hyperparamètres ici
-    }
-
-    bbn_search = BayesSearchCV(bbn_model, param_space, n_iter=50, cv=5, random_state=42)
-
-    # Entraîner le modèle avec les données d'entraînement
-    bbn_search.fit(X_train, y_train)
+    # Entraîner le modèle LVQ avec les meilleurs paramètres
+    model.set_params(**best_params)
+    model.fit(X_train, y_train)
 
     # Faire des prédictions sur les données de test
-    y_pred = bbn_search.predict(X_test)
+    y_pred = model.predict(X_test)
 
-    # Calculer le taux de précision
+    # Calculer la précision
     accuracy = accuracy_score(y_test, y_pred)
 
-    # Faire une prédiction avec le modèle actuel sur les données de prédiction
-    y_pred_current = bbn_search.predict(X_pred.reshape(1, -1))
+# Prédire la dernière ligne du CSV
+last_row = data.iloc[-1, :-1].values.reshape(1, -1)
+prediction = model.predict(last_row)
 
-    # Afficher la prédiction actuelle
-    print("Prédiction actuelle:", y_pred_current)
+# Comparer avec les vrais numéros et calculer la précision
+true_numbers = data.iloc[-1, -1]
+correct_predictions = (prediction == true_numbers).sum()
+precision = correct_predictions / len(true_numbers)
 
-# Faire une prédiction sur la dernière ligne du CSV
-y_pred_final = bbn_search.predict(X_pred.reshape(1, -1))
-
-# Calculer le taux de précision final
-final_accuracy = accuracy_score([y_true], y_pred_final)
-
-# Afficher les valeurs du modèle et son taux de précision
-print("Modèle BBN entraîné avec succès.")
-print("Taux de précision final : {:.2%}".format(final_accuracy))
+# Afficher les résultats
+print("Modèle LVQ avec les meilleurs hyperparamètres:", best_params)
+print("Précision du modèle:", accuracy)
+print("Prédiction:", prediction)
+print("Vrais numéros:", true_numbers)
+print("Précision de la prédiction:", precision)
