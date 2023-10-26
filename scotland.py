@@ -43,7 +43,7 @@ def objective(n_estimators, max_depth, min_samples_split, min_samples_leaf, max_
 
     # Prédiction du dernier tuple
     last_tuple = X_test[-1]
-    predicted_last_value = list(map(int, model.predict([last_tuple])[0]))
+    predicted_last_value = int(model.predict([last_tuple])[0])
 
     # Calcul du score
     mse = mean_squared_error([y_test[-1]], [predicted_last_value])
@@ -58,6 +58,7 @@ if __name__ == "__main__":
     euromillions_data = read_euromillions_data(file_path)
 
     best_score = None
+    last_tuple = euromillions_data[-1][:-1]
 
     while True:
         # Création d'une étude d'optimisation bayésienne
@@ -108,7 +109,7 @@ if __name__ == "__main__":
             n_jobs=5
         )
         model.fit(X_train, y_train)
-        predicted_last_value = list(map(int, model.predict([last_tuple])[0]))
+        predicted_last_value = int(model.predict([last_tuple])[0])
 
         print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
         print(f"Score de précision actuel : {best_score * 100}%")
