@@ -28,6 +28,7 @@ def objective(n_estimators, max_depth, min_samples_split, min_samples_leaf, max_
     # Répéter pour chaque numéro possible (de 1 à 50)
     for num in range(1, 51):
         y = create_target_columns(euromillions_data, num)
+        X = [row[:-1] for row in euromillions_data]
         
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
