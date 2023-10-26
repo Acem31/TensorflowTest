@@ -63,13 +63,16 @@ if __name__ == "__main__":
 
         print(f"Meilleurs hyperparamètres : {best_params}")
         print(f"Meilleur score de précision : {best_score * 100}%")
-        print(f"Dernière ligne du CSV : {euromillions_data[-1]}")
-        print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
 
         if best_score >= 0.5:
             break
 
-        last_actual_value = euromillions_data[-1][-1]
-        print(f"Dernière ligne du CSV : {euromillions_data[-1]}")
-        print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
-        print(f"Score de précision actuel : {best_score * 100}%")
+    # Afficher la dernière ligne du CSV
+    last_actual_value = euromillions_data[-1][-1]
+    print(f"Dernière ligne du CSV : {euromillions_data[-1]}")
+
+    # Prédiction du dernier tuple pour l'itération actuelle
+    predicted_last_value = predict_last_tuple(euromillions_data)[0]
+
+    print(f"Prédiction pour la dernière ligne : {predicted_last_value}")
+    print(f"Score de précision actuel : {best_score * 100}%")
