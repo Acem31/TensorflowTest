@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 
 # Charger les données à partir du CSV
-data = pd.read_csv('votre_fichier.csv', header=None, delimiter=';')
+data = pd.read_csv(euromillions.csv, header=None, delimiter=';')
 
 # Garder uniquement les 5 premiers numéros de chaque ligne
 data = data.iloc[:, :5]
