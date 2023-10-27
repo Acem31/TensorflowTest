@@ -11,9 +11,8 @@ data = pd.read_csv('euromillions.csv', header=None, delimiter=';')
 # Garder uniquement les 5 premières colonnes de chaque ligne
 data = data.iloc[:, :5]
 
-# Séparer les données en X et y
-X = data.iloc[:-1, :]  # Les 5 premières colonnes de toutes les lignes, sauf la dernière
-y = data.iloc[-1, :]   # Les 5 premières colonnes de la dernière ligne
+# Diviser les données en X_train, y_train (80% des données) et X_test, y_test (dernière ligne)
+X_train, y_train = train_test_split(data.iloc[:-1, :], test_size=0.2, random_state=42)
 
 # Créer un espace d'hyperparamètres pour l'optimisation bayésienne
 param_space = {
@@ -39,14 +38,14 @@ opt = BayesSearchCV(
 )
 
 # Effectuer l'optimisation bayésienne des hyperparamètres
-opt.fit(X, y)
+opt.fit(X_train, y_train)
 
 # Obtenir les meilleurs paramètres
 best_params = opt.best_params_
 
 # Entraîner le modèle LightGBM avec les meilleurs paramètres
 model = lgb.LGBMRegressor(**best_params)
-model.fit(X, y)
+model.fit(X_train, y_train)
 
 # Prédire la dernière ligne du CSV
 last_row = data.iloc[-1, :].values.reshape(1, -1)
