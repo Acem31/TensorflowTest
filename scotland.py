@@ -11,8 +11,8 @@ data = pd.read_csv('euromillions.csv', header=None, delimiter=';')
 # Garder uniquement les 5 premières colonnes de chaque ligne
 data = data.iloc[:, :5]
 
-# Diviser les données en X_train, y_train (80% des données) et X_test, y_test (dernière ligne)
-X_train, y_train = train_test_split(data.iloc[:-1, :], test_size=0.2, random_state=42)
+# Diviser les données en X_train, X_test, y_train, y_test
+X_train, X_test, y_train, y_test = train_test_split(data.iloc[:-1, :-1], data.iloc[:-1, -1:], test_size=0.2, random_state=42)
 
 # Créer un espace d'hyperparamètres pour l'optimisation bayésienne
 param_space = {
@@ -48,8 +48,7 @@ model = lgb.LGBMRegressor(**best_params)
 model.fit(X_train, y_train)
 
 # Prédire la dernière ligne du CSV
-last_row = data.iloc[-1, :].values.reshape(1, -1)
-prediction = model.predict(last_row)
+prediction = model.predict(X_test)
 
 # Afficher les résultats
 print("Meilleurs hyperparamètres LightGBM:", best_params)
