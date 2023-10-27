@@ -12,7 +12,7 @@ data = pd.read_csv('euromillions.csv', header=None, delimiter=';')
 data = data.iloc[:, :5]
 
 # Diviser les données en X_train, y_train (80% des données) et X_test, y_test (dernière ligne)
-X_train, y_train = train_test_split(data.iloc[:-1, :], test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(data.iloc[:-1, :-1], data.iloc[:-1, -1:], test_size=0.2, random_state=42)
 
 # Créer un espace d'hyperparamètres pour l'optimisation bayésienne
 param_space = {
