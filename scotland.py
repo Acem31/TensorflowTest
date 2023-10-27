@@ -11,8 +11,8 @@ data = pd.read_csv('euromillions.csv', header=None, delimiter=';')
 # Garder uniquement les 5 premières colonnes de chaque ligne
 data = data.iloc[:, :5]
 
-# Diviser les données en X_train, X_test, y_train, y_test
-X_train, X_test, y_train, y_test = train_test_split(data.iloc[:-1, :-1], data.iloc[:-1, -1:], test_size=0.2, random_state=42)
+# Diviser les données en X_train, y_train (80% des données) et X_test, y_test (dernière ligne)
+X_train, y_train = train_test_split(data.iloc[:-1, :], test_size=0.2, random_state=42)
 
 # Créer un espace d'hyperparamètres pour l'optimisation bayésienne
 param_space = {
@@ -43,13 +43,16 @@ opt.fit(X_train, y_train)
 # Obtenir les meilleurs paramètres
 best_params = opt.best_params_
 
-# Entraîner le modèle LightGBM avec les meilleurs paramètres
-model = lgb.LGBMRegressor(**best_params)
-model.fit(X_train, y_train)
+# Entraîner un modèle LightGBM pour chaque colonne
+models = []
+for i in range(5):
+    model = lgb.LGBMRegressor(**best_params)
+    model.fit(X_train, y_train.iloc[:, i])
+    models.append(model)
 
-# Prédire la dernière ligne du CSV
-prediction = model.predict(X_test)
+# Prédire la dernière ligne du CSV avec chaque modèle
+predictions = [model.predict(y_test) for model in models]
 
 # Afficher les résultats
 print("Meilleurs hyperparamètres LightGBM:", best_params)
-print("Prédiction pour la dernière ligne du CSV:", prediction)
+print("Prédiction pour la dernière ligne du CSV (les 5 numéros) :", predictions)
