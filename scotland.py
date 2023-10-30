@@ -1,6 +1,6 @@
 import csv
-import lightgbm as lgb
 import numpy as np
+from sklearn.cluster import KMeans
 
 # Chargement des données
 data = []
@@ -10,36 +10,21 @@ with open('euromillions.csv', 'r') as file:
         numbers = list(map(int, row[:5]))
         data.append(numbers)
 
-# Créez un tableau pour stocker les prédictions de chaque colonne
-predicted_columns = []
+# Transformation des données en tableau numpy
+X = np.array(data)
 
-# Entraînez un modèle LightGBM pour chaque colonne
-for col in range(5):
-    # Préparez les données d'entraînement et de test
-    X_train = np.array([row[:col] for row in data[:-1]])  # Convertissez en tableau NumPy
-    y_train = np.array([row[col] for row in data[1:]])  # Convertissez en tableau NumPy
-    X_test = np.array(data[-1][:col])  # Convertissez en tableau NumPy
+# Création du modèle de clustering (K-Means)
+n_clusters = 10  # Vous pouvez ajuster le nombre de clusters selon vos besoins
+kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
 
-    # Créez un dataset LightGBM
-    lgb_train = lgb.Dataset(X_train, y_train, feature_name=[str(i) for i in range(col)])  # Spécifiez le nom de la caractéristique
+# Prédiction de la dernière ligne
+last_row = X[-1].reshape(1, -1)
+predicted_cluster = kmeans.predict(last_row)
 
-    # Paramètres du modèle LightGBM
-    params = {
-        "objective": "regression",
-        "metric": "l2",
-        "boosting_type": "gbdt",
-        "num_leaves": 31,
-        "learning_rate": 0.05,
-        "feature_fraction": 0.9,
-    }
+# Recherche des exemples dans le même cluster
+similar_rows = [row for row, label in zip(data, kmeans.labels_) if label == predicted_cluster]
 
-    # Entraînez le modèle
-    num_round = 100
-    bst = lgb.train(params, lgb_train, num_round)
+# Sélection d'un exemple aléatoire dans le cluster
+predicted_sequence = random.choice(similar_rows)
 
-    # Faites une prédiction pour la colonne actuelle
-    predicted_value = int(bst.predict(X_test.reshape(1, -1))[0])  # Utilisez reshape pour prédire une seule valeur
-    predicted_columns.append(predicted_value)
-
-# Affichez les prédictions finales
-print(predicted_columns)
+print("Séquence prédite de 5 numéros:", predicted_sequence)
