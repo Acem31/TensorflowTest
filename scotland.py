@@ -34,10 +34,10 @@ while not stop_condition:
     # Recherche des exemples dans le même cluster
     similar_rows = [row[:5] for row, label in zip(data, kmeans.labels_) if label == kmeans.predict([last_row])]
 
-    # Si le modèle prédit correctement les 5 premiers numéros, arrêtez la boucle
-    if last_row in similar_rows:
+    if any(np.array_equal(last_row, row) for row in similar_rows):
         stop_condition = True
         print("Modèle a réussi à prédire les 5 premiers numéros.")
+
     else:
         # Optimisation des hyperparamètres en utilisant une recherche aléatoire
         param_grid = {
