@@ -1,34 +1,45 @@
 import csv
 import lightgbm as lgb
-import pandas as pd
+import numpy as np
 
 # Chargement des données
 data = []
 with open('euromillions.csv', 'r') as file:
     reader = csv.reader(file, delimiter=';')
     for row in reader:
-        numbers = tuple(map(int, row[:5]))
+        numbers = list(map(int, row[:5]))
         data.append(numbers)
 
-# Préparation des données pour LightGBM
-df = pd.DataFrame(data, columns=['num1', 'num2', 'num3', 'num4', 'target'])
+# Créez un tableau pour stocker les prédictions de chaque colonne
+predicted_columns = []
 
-# Création du modèle LightGBM pour chaque colonne
-models = {}
-for col in df.columns:
-    model = lgb.LGBMClassifier(num_leaves=31, objective='multiclass')
-    model.fit(df.drop('target', axis=1), df[col])
-    models[col] = model
+# Entraînez un modèle LightGBM pour chaque colonne
+for col in range(5):
+    # Préparez les données d'entraînement et de test
+    X_train = [row[:col] for row in data[:-1]]
+    y_train = [row[col] for row in data[1:]]
+    X_test = [row[:col] for row in data[-1]]
 
-# Récupération de la dernière ligne du CSV
-last_row = data[-1]
+    # Créez un dataset LightGBM
+    lgb_train = lgb.Dataset(X_train, y_train)
 
-# Utilisation des modèles pour prédire chaque colonne de la dernière ligne
-predicted_numbers = {}
-for col, model in models.items():
-    predicted_numbers[col] = model.predict(pd.DataFrame([last_row], columns=['num1', 'num2', 'num3', 'num4', 'target'))[0]
+    # Paramètres du modèle LightGBM
+    params = {
+        "objective": "regression",
+        "metric": "l2",
+        "boosting_type": "gbdt",
+        "num_leaves": 31,
+        "learning_rate": 0.05,
+        "feature_fraction": 0.9,
+    }
 
-# Création d'un tuple avec les résultats
-predicted_tuple = (predicted_numbers['num1'], predicted_numbers['num2'], predicted_numbers['num3'], predicted_numbers['num4'], predicted_numbers['target'])
+    # Entraînez le modèle
+    num_round = 100
+    bst = lgb.train(params, lgb_train, num_round)
 
-print("Tuple prédit pour la dernière ligne du CSV:", predicted_tuple)
+    # Faites une prédiction pour la colonne actuelle
+    predicted_value = int(bst.predict(X_test)[0])
+    predicted_columns.append(predicted_value)
+
+# Affichez les prédictions finales
+print(predicted_columns)
