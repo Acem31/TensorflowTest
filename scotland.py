@@ -14,9 +14,14 @@ with open('euromillions.csv', 'r') as file:
 # Transformation des données en tableau numpy
 X = np.array(data)
 
-# Création du modèle de clustering (K-Means)
-n_clusters = 10  # Vous pouvez ajuster le nombre de clusters selon vos besoins
-kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init=10).fit(X)
+# Hyperparamètres du modèle K-Means
+n_clusters = 10  # Nombre de clusters
+n_init = 20  # Nombre d'initialisations
+init_method = 'k-means++'  # Méthode d'initialisation des centroïdes (autres options : 'random', 'k-means++', 'auto', etc.)
+distance_metric = 'euclidean'  # Métrique de distance (autres options : 'manhattan', 'cosine', etc.)
+
+# Création du modèle de clustering (K-Means) avec les hyperparamètres
+kmeans = KMeans(n_clusters=n_clusters, init=init_method, n_init=n_init, random_state=0).fit(X)
 
 # Prédiction de la dernière ligne
 last_row = X[-1].reshape(1, -1)
