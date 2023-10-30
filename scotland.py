@@ -1,5 +1,6 @@
 import csv
 import numpy as np
+import random
 from sklearn.cluster import KMeans
 
 # Chargement des données
@@ -15,7 +16,7 @@ X = np.array(data)
 
 # Création du modèle de clustering (K-Means)
 n_clusters = 10  # Vous pouvez ajuster le nombre de clusters selon vos besoins
-kmeans = KMeans(n_clusters=n_clusters, random_state=0).fit(X)
+kmeans = KMeans(n_clusters=n_clusters, random_state=0, n_init=10).fit(X)
 
 # Prédiction de la dernière ligne
 last_row = X[-1].reshape(1, -1)
