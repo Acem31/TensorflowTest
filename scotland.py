@@ -18,7 +18,7 @@ for col in range(5):
     # Préparez les données d'entraînement et de test
     X_train = [row[:col] for row in data[:-1]]
     y_train = [row[col] for row in data[1:]]
-    X_test = [row[:col] for row in data[-1]]
+    X_test = data[-1][:col]  # Accédez à la colonne appropriée dans la dernière ligne
 
     # Créez un dataset LightGBM
     lgb_train = lgb.Dataset(X_train, y_train)
@@ -38,7 +38,7 @@ for col in range(5):
     bst = lgb.train(params, lgb_train, num_round)
 
     # Faites une prédiction pour la colonne actuelle
-    predicted_value = int(bst.predict(X_test)[0])
+    predicted_value = int(bst.predict([X_test])[0])  # Utilisez [X_test] pour prédire une seule valeur
     predicted_columns.append(predicted_value)
 
 # Affichez les prédictions finales
