@@ -21,7 +21,7 @@ for col in range(5):
     X_test = np.array(data[-1][:col])  # Convertissez en tableau NumPy
 
     # Créez un dataset LightGBM
-    lgb_train = lgb.Dataset(X_train, y_train)
+    lgb_train = lgb.Dataset(X_train, y_train, feature_name=[str(i) for i in range(col)])  # Spécifiez le nom de la caractéristique
 
     # Paramètres du modèle LightGBM
     params = {
