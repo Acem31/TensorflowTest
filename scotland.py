@@ -12,15 +12,13 @@ with open('euromillions.csv', 'r') as file:
 
 # Préparation des données pour LightGBM
 df = pd.DataFrame(data, columns=['num1', 'num2', 'num3', 'num4', 'target'])
-# 'target' représente la colonne 5 de la dernière ligne, mais ce n'est pas utilisé pour la prédiction
 
-# Création du modèle LightGBM
+# Création du modèle LightGBM pour chaque colonne
 models = {}
 for col in df.columns:
-    if col != 'target':
-        model = lgb.LGBMClassifier(num_leaves=31, objective='multiclass')
-        model.fit(df.drop('target', axis=1), df[col])
-        models[col] = model
+    model = lgb.LGBMClassifier(num_leaves=31, objective='multiclass')
+    model.fit(df.drop('target', axis=1), df[col])
+    models[col] = model
 
 # Récupération de la dernière ligne du CSV
 last_row = data[-1]
@@ -28,9 +26,12 @@ last_row = data[-1]
 # Utilisation des modèles pour prédire chaque colonne de la dernière ligne
 predicted_numbers = {}
 for col, model in models.items():
-    predicted_numbers[col] = model.predict(pd.DataFrame([last_row], columns=['num1', 'num2', 'num3', 'num4']).drop('target', axis=1))[0]
+    if col != 'target':
+        predicted_numbers[col] = model.predict(pd.DataFrame([last_row], columns=['num1', 'num2', 'num3', 'num4']).drop('target', axis=1))[0]
+    else:
+        predicted_numbers[col] = last_row[4]
 
 # Création d'un tuple avec les résultats
-predicted_tuple = (predicted_numbers['num1'], predicted_numbers['num2'], predicted_numbers['num3'], predicted_numbers['num4'], last_row[4])
+predicted_tuple = (predicted_numbers['num1'], predicted_numbers['num2'], predicted_numbers['num3'], predicted_numbers['num4'], predicted_numbers['target'])
 
 print("Tuple prédit pour la dernière ligne du CSV:", predicted_tuple)
