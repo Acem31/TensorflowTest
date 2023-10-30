@@ -26,10 +26,7 @@ last_row = data[-1]
 # Utilisation des modèles pour prédire chaque colonne de la dernière ligne
 predicted_numbers = {}
 for col, model in models.items():
-    if col != 'target':
-        predicted_numbers[col] = model.predict(pd.DataFrame([last_row], columns=['num1', 'num2', 'num3', 'num4']).drop('target', axis=1))[0]
-    else:
-        predicted_numbers[col] = last_row[4]
+    predicted_numbers[col] = model.predict(pd.DataFrame([last_row], columns=['num1', 'num2', 'num3', 'num4', 'target'))[0]
 
 # Création d'un tuple avec les résultats
 predicted_tuple = (predicted_numbers['num1'], predicted_numbers['num2'], predicted_numbers['num3'], predicted_numbers['num4'], predicted_numbers['target'])
