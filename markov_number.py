@@ -1,45 +1,53 @@
 import csv
-import lightgbm as lgb
-import numpy as np
+import random
 
 # Chargement des données
 data = []
 with open('euromillions.csv', 'r') as file:
     reader = csv.reader(file, delimiter=';')
     for row in reader:
-        numbers = list(map(int, row[:5]))
+        numbers = tuple(map(int, row[:5]))
         data.append(numbers)
 
-# Créez un tableau pour stocker les prédictions de chaque colonne
-predicted_columns = []
+# Récupération de la dernière ligne du CSV
+last_row = data[-1]
 
-# Entraînez un modèle LightGBM pour chaque colonne
-for col in range(5):
-    # Préparez les données d'entraînement et de test
-    X_train = [row[:col] for row in data[:-1]]
-    y_train = [row[col] for row in data[1:]]
-    X_test = [row[:col] for row in data[-1]]
+# Construction de la matrice de transition
+transition_matrix = {}
+for i in range(len(data) - 1):
+    current_tuple = data[i]
+    next_tuple = data[i + 1]
 
-    # Créez un dataset LightGBM
-    lgb_train = lgb.Dataset(X_train, y_train)
+    if current_tuple in transition_matrix:
+        if next_tuple in transition_matrix[current_tuple]:
+            transition_matrix[current_tuple][next_tuple] += 1
+        else:
+            transition_matrix[current_tuple][next_tuple] = 1
+    else:
+        transition_matrix[current_tuple] = {next_tuple: 1}
 
-    # Paramètres du modèle LightGBM
-    params = {
-        "objective": "regression",
-        "metric": "l2",
-        "boosting_type": "gbdt",
-        "num_leaves": 31,
-        "learning_rate": 0.05,
-        "feature_fraction": 0.9,
-    }
+# Normaliser les probabilités de transition
+for current_tuple in transition_matrix:
+    total_transitions = sum(transition_matrix[current_tuple].values())
+    for next_tuple in transition_matrix[current_tuple]:
+        transition_matrix[current_tuple][next_tuple] /= total_transitions
 
-    # Entraînez le modèle
-    num_round = 100
-    bst = lgb.train(params, lgb_train, num_round)
+# Prédiction du prochain tuple basé sur la dernière ligne
+current_tuple = last_row
+predicted_sequence = list(current_tuple)
 
-    # Faites une prédiction pour la colonne actuelle
-    predicted_value = int(bst.predict(X_test)[0])
-    predicted_columns.append(predicted_value)
+for _ in range(4):  # Répéter quatre fois au lieu de cinq
+    if current_tuple in transition_matrix:
+        next_tuple = random.choices(
+            list(transition_matrix[current_tuple].keys()),
+            list(transition_matrix[current_tuple].values())
+        )[0]
+    else:
+        next_tuple = random.choice(data)
 
-# Affichez les prédictions finales
-print(predicted_columns)
+    predicted_sequence.extend(next_tuple)
+    current_tuple = next_tuple
+
+# Afficher la séquence prédite de cinq chiffres
+predicted_sequence = predicted_sequence[-5:]  # Garder uniquement les cinq derniers chiffres
+print(predicted_sequence)
