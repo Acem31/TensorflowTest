@@ -18,13 +18,12 @@ X = np.array(data)
 n_clusters = 10
 n_init = 20
 
-# Initialisation de l'optimiseur bayésien
 opt = BayesSearchCV(
     KMeans(),
     {
         'n_clusters': (5, 80),
         'n_init': (10, 300),
-        'n_iter' :(10, 200),
+        'max_iter': (10, 200),  # Ajoutez max_iter
     },
     random_state=0
 )
@@ -38,7 +37,7 @@ while not stop_condition:
     best_params = opt.best_params_
 
     # Création du modèle de clustering (K-Means) avec les meilleurs hyperparamètres
-    kmeans = KMeans(n_clusters=best_params['n_clusters'], n_init=best_params['n_init'], random_state=0).fit(X)
+    kmeans = KMeans(n_clusters=best_params['n_clusters'], n_init=best_params['n_init'], max_iter=best_params['max_iter'], random_state=43, verbose=1).fit(X)
 
     # Prédiction des 5 premiers numéros de la dernière ligne
     last_row = X[-1][:5]
