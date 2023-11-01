@@ -38,11 +38,11 @@ while not stop_condition:
     with open('euromillions.csv', 'r') as file:
         last_line = list(file.readlines())[-1]
         last_line_csv = [int(num) for num in last_line.strip().split(';')]  
-        
-        if last_row == last_line_csv:
-            if all(x == y for x, y in zip(last_row, last_line_csv)):
-                stop_condition = True
-                print("Modèle a réussi à prédire les 5 premiers numéros.")
+    
+    if np.array_equal(last_row, last_line_csv):
+        stop_condition = True
+        print("Modèle a réussi à prédire les 5 premiers numéros.")
+
 
     # Optimisation des hyperparamètres en utilisant une recherche aléatoire
     param_grid = {
