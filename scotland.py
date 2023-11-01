@@ -22,10 +22,10 @@ n_init = 20
 opt = BayesSearchCV(
     KMeans(),
     {
-        'n_clusters': (5, 20),
-        'n_init': (10, 30),
+        'n_clusters': (5, 80),
+        'n_init': (10, 300),
+        'n_iter' :(10, 200),
     },
-    n_iter=10,
     random_state=0
 )
 
