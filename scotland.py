@@ -44,30 +44,28 @@ while not stop_condition:
                 stop_condition = True
                 print("Modèle a réussi à prédire les 5 premiers numéros.")
 
+    # Optimisation des hyperparamètres en utilisant une recherche aléatoire
+    param_grid = {
+        'n_clusters': range(n_clusters, n_clusters + 10),  # Ajustez cette plage comme vous le souhaitez
+        'n_init': range(n_init, n_init + 10),  # Ajustez cette plage comme vous le souhaitez
+    }
 
-    else:
-        # Optimisation des hyperparamètres en utilisant une recherche aléatoire
-        param_grid = {
-            'n_clusters': range(n_clusters, n_clusters + 10),  # Ajustez cette plage comme vous le souhaitez
-            'n_init': range(n_init, n_init + 10),  # Ajustez cette plage comme vous le souhaitez
-        }
+    param_combinations = list(ParameterSampler(param_grid, n_iter=10, random_state=random_state))
 
-        param_combinations = list(ParameterSampler(param_grid, n_iter=10, random_state=random_state))
+    best_combination = None
+    best_score = float('inf')
 
-        best_combination = None
-        best_score = float('inf')
+    for params in param_combinations:
+        kmeans_tmp = KMeans(n_clusters=params['n_clusters'], init=init_method, n_init=params['n_init'], random_state=random_state).fit(X)
+        dist = pairwise_distances(kmeans_tmp.cluster_centers_, X)
+        score = dist.min(axis=1).sum()
 
-        for params in param_combinations:
-            kmeans_tmp = KMeans(n_clusters=params['n_clusters'], init=init_method, n_init=params['n_init'], random_state=random_state).fit(X)
-            dist = pairwise_distances(kmeans_tmp.cluster_centers_, X)
-            score = dist.min(axis=1).sum()
+        if score < best_score:
+            best_score = score
+            best_combination = params
 
-            if score < best_score:
-                best_score = score
-                best_combination = params
-
-        n_clusters = best_combination['n_clusters']
-        n_init = best_combination['n_init']
+    n_clusters = best_combination['n_clusters']
+    n_init = best_combination['n_init']
 
 # Afficher les 5 numéros prédits
 print("Séquence prédite de 5 numéros:", similar_rows[0])
