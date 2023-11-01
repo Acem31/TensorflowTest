@@ -35,8 +35,10 @@ while not stop_condition:
     similar_rows = [row[:5] for row, label in zip(data, kmeans.labels_) if label == kmeans.predict([last_row])]
     
     # Charger la dernière ligne du CSV sous forme de liste de nombres
-    last_line_csv = [int(num) for num in last_line_of_csv.split(';')]
-    
+    with open('euromillions.csv', 'r') as file:
+        last_line = list(file.readlines())[-1]
+        last_line_csv = [int(num) for num in last_line.strip().split(';')]    
+        
     if last_row == last_line_csv:
         stop_condition = True
         print("Modèle a réussi à prédire les 5 premiers numéros.")
