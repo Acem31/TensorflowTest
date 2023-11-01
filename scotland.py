@@ -33,8 +33,11 @@ while not stop_condition:
 
     # Recherche des exemples dans le même cluster
     similar_rows = [row[:5] for row, label in zip(data, kmeans.labels_) if label == kmeans.predict([last_row])]
-
-    if any(np.array_equal(last_row, row) for row in similar_rows):
+    
+    # Charger la dernière ligne du CSV sous forme de liste de nombres
+    last_line_csv = [int(num) for num in last_line_of_csv.split(';')]
+    
+    if last_row == last_line_csv:
         stop_condition = True
         print("Modèle a réussi à prédire les 5 premiers numéros.")
 
