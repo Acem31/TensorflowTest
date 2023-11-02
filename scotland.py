@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import cross_val_score
 from tensorflow import keras
-from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
+from keras.wrappers.scikit_learn import KerasClassifier
 
 # Chargement des données
 data = []
@@ -40,7 +40,7 @@ X, Y = prepare_data_for_lstm(time_series.values, look_back)
 # Création de la structure du modèle LSTM
 def create_lstm_model(look_back, units=50):
     model = Sequential()
-    model.add(LSTM(units, input_shape=(look_back, 1)))
+    model.add(LSTM(units, input_shape=(look_back, 1))
     model.add(Dense(1))
     model.compile(loss='mean_squared_error', optimizer='adam')
     return model
@@ -58,11 +58,11 @@ def build_model(units, look_back, batch_size, epochs):
     model = create_lstm_model(look_back, units)
     return model
 
-# Créez un objet KerasRegressor compatible avec scikit-learn
-keras_regressor = KerasRegressor(build_fn=build_model)
+# Créez un objet KerasClassifier compatible avec scikit-learn
+keras_classifier = KerasClassifier(build_fn=build_model, batch_size=32, epochs=100, verbose=0)
 
 # Utilisez cet objet dans la recherche des hyperparamètres
-opt = BayesSearchCV(keras_regressor, param_space, n_iter=50, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
+opt = BayesSearchCV(keras_classifier, param_space, n_iter=50, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
 opt.fit(X.reshape(-1, look_back, 1), Y)
 
 # Afficher les meilleurs hyperparamètres
