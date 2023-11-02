@@ -35,7 +35,7 @@ X, Y = prepare_data_for_lstm(time_series.values, look_back)
 # Création de la structure du modèle LSTM
 def create_lstm_model(look_back, units=50):
     model = Sequential()
-    model.add(LSTM(units, input_shape=(look_back, 1))
+    model.add(LSTM(units, input_shape=(look_back, 1)))
     model.add(Dense(1))
     model.compile(loss='mean_squared_error', optimizer='adam')
     return model
