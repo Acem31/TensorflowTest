@@ -2,7 +2,7 @@ import csv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from statsmodels.tsa.arima_model import ARIMA
+from statsmodels.tsa.arima.model import ARIMA
 from sklearn.metrics import mean_squared_error
 
 # Chargement des données
@@ -35,6 +35,13 @@ for p in range(5):
             except:
                 continue
 
+if best_order is not None:
+    model = ARIMA(time_series, order=best_order)
+    model_fit = model.fit(disp=0)
+    # Reste du code pour la prédiction, l'évaluation et l'affichage
+else:
+    print("Aucun meilleur ordre n'a été trouvé. Veuillez ajuster votre recherche d'hyperparamètres.")
+    
 # Entraînement du modèle ARIMA avec les meilleurs hyperparamètres
 model = ARIMA(time_series, order=best_order)
 model_fit = model.fit(disp=0)
