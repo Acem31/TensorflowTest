@@ -49,18 +49,18 @@ param_space = {
 }
 
 model = Sequential()
-model.add(LSTM(units=best_params['units'], input_shape=(best_params['look_back'], 1)))
 opt = BayesSearchCV(lstm, param_space, n_iter=50, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
 
 opt.fit(X.reshape(-1, look_back, 1), Y)
+model.add(LSTM(units=best_params['units'], input_shape=(best_params['look_back'], 1)))
 
 # Afficher les meilleurs hyperparamètres
 best_params = opt.best_params_
 print("Meilleurs hyperparamètres:", best_params)
 
 # Créer le modèle final avec les meilleurs hyperparamètres
-best_units = best_params['units']
-best_look_back = best_params['look_back']
+best_units = model.best_params_['units']
+best_look_back = model.best_params_['look_back']
 best_model = create_lstm_model(best_look_back, best_units)
 
 # Entraîner le modèle
