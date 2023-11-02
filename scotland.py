@@ -47,8 +47,8 @@ def create_lstm_model(look_back, units=50):
 
 # Recherche des meilleurs hyperparamètres avec skopt
 param_space = {
-    'batch_size': Real(1, 32),
-    'epochs': Real(10, 100)
+    'batch_size': Integer(1, 32),  # Plage d'entiers pour batch_size
+    'epochs': Integer(10, 100)  # Plage d'entiers pour epochs
 }
 
 # Créez une fonction pour construire le modèle Keras avec les hyperparamètres
