@@ -29,9 +29,23 @@ model = Sequential()
 model.add(LSTM(50, input_shape=(5, 1)))
 model.add(Dense(5, activation='linear'))
 model.compile(loss='mean_squared_error', optimizer='adam')
-model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_test, y_test))
 
-# Faire une prédiction pour les 5 prochains numéros
-last_five_numbers = np.array(data[-1][:5]).reshape(1, 5, 1)
-next_numbers_prediction = model.predict(last_five_numbers)
-print("Prédiction pour les 5 prochains numéros :", next_numbers_prediction[0])
+# Seuil de distance pour continuer l'apprentissage
+seuil_distance = 5.0
+
+while True:
+    model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_test, y_test))
+    
+    last_five_numbers = np.array(data[-1][:5]).reshape(1, 5, 1)
+    next_numbers_prediction = model.predict(last_five_numbers)
+    
+    # Calcul de la distance euclidienne entre la prédiction et la dernière ligne du CSV
+    distance = np.linalg.norm(next_numbers_prediction[0] - data[-1][:5])
+    
+    print("Prédiction pour les 5 prochains numéros :", next_numbers_prediction[0])
+    print("Distance euclidienne avec la dernière ligne du CSV :", distance)
+    
+    if distance < seuil_distance:
+        break
+
+print("Le modèle a atteint un résultat satisfaisant.")
