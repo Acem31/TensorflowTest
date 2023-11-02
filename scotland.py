@@ -2,8 +2,11 @@ import csv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from statsmodels.tsa.arima.model import ARIMA
 from sklearn.metrics import mean_squared_error
+from keras.models import Sequential
+from keras.layers import LSTM, Dense
+from skopt import BayesSearchCV
+from skopt.space import Real, Integer
 
 # Chargement des données
 data = []
@@ -17,51 +20,66 @@ with open('euromillions.csv', 'r') as file:
 data = np.array(data)
 date_range = pd.date_range(start='01-01-2004', periods=len(data), freq='W')
 time_series = pd.Series(data[:, 0], index=date_range)
-data_values = time_series.values
 
-# Définir une fonction pour évaluer les hyperparamètres
-def evaluate_arima(p, d, q, trend):
-    try:
-        model = ARIMA(data_values, order=(p, d, q), trend=trend)
-        model_fit = model.fit()
-        forecast_steps = 5
-        forecast, stderr, conf_int = model_fit.forecast(steps=forecast_steps)
-        historical_data = time_series[-forecast_steps:]
-        rmse = np.sqrt(mean_squared_error(historical_data, forecast))
-        return rmse
-    except:
-        return float("inf")
+# Préparation des données pour l'apprentissage
+def prepare_data_for_lstm(data, look_back=1):
+    X, Y = [], []
+    for i in range(len(data) - look_back):
+        X.append(data[i:(i + look_back)])
+        Y.append(data[i + look_back])
+    return np.array(X), np.array(Y)
 
-# Recherche des meilleurs hyperparamètres
-best_rmse = float("inf")
-best_order = None
+look_back = 5  # Nombre de pas de temps précédents à utiliser pour la prédiction
+X, Y = prepare_data_for_lstm(time_series.values, look_back)
 
-for p in range(5):
-    for d in range(2):
-        for q in range(5):
-            for trend in ['n', 'c', 't', 'ct']:
-                rmse = evaluate_arima(p, d, q, trend)
-                if rmse < best_rmse:
-                    best_rmse = rmse
-                    best_order = (p, d, q, trend)
+# Création de la structure du modèle LSTM
+def create_lstm_model(look_back, units=50):
+    model = Sequential()
+    model.add(LSTM(units, input_shape=(look_back, 1))
+    model.add(Dense(1))
+    model.compile(loss='mean_squared_error', optimizer='adam')
+    return model
 
-if best_order is not None:
-    best_p, best_d, best_q, best_trend = best_order
-    model = ARIMA(data_values, order=(best_p, best_d, best_q), trend=best_trend)
-    model_fit = model.fit()
+# Recherche des meilleurs hyperparamètres avec skopt
+param_space = {
+    'units': Integer(10, 100),
+    'look_back': Integer(1, 10),
+    'batch_size': Integer(1, 32),
+    'epochs': Integer(10, 100)
+}
 
-    # Prédiction des numéros futurs
-    forecast_steps = 5
-    forecast, stderr, conf_int = model_fit.forecast(steps=forecast_steps)
+lstm = LSTM()
+opt = BayesSearchCV(lstm, param_space, n_iter=50, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
 
-    # Affichage des numéros prédits
-    print("Séquence prédite de 5 numéros:", forecast)
+opt.fit(X.reshape(-1, look_back, 1), Y)
 
-    # Tracé des prédictions
-    plt.plot(time_series, label='Historical Data')
-    plt.plot(pd.date_range(start=time_series.index[-1], periods=forecast_steps, freq='W'), forecast, label='Predictions', color='red')
-    plt.fill_between(pd.date_range(start=time_series.index[-1], periods=forecast_steps, freq='W'), conf_int[:, 0], conf_int[:, 1], color='pink', alpha=0.3)
-    plt.legend()
-    plt.show()
-else:
-    print("Aucun meilleur ordre n'a été trouvé. Veuillez ajuster votre recherche d'hyperparamètres.")
+# Afficher les meilleurs hyperparamètres
+best_params = opt.best_params_
+print("Meilleurs hyperparamètres:", best_params)
+
+# Créer le modèle final avec les meilleurs hyperparamètres
+best_units = best_params['units']
+best_look_back = best_params['look_back']
+best_model = create_lstm_model(best_look_back, best_units)
+
+# Entraîner le modèle
+best_model.fit(X.reshape(-1, best_look_back, 1), Y, epochs=best_params['epochs'], batch_size=best_params['batch_size'], verbose=1)
+
+# Prédire les numéros futurs
+forecast_steps = 5
+forecast = []
+
+for i in range(forecast_steps):
+    input_sequence = time_series.values[-best_look_back:].reshape(1, best_look_back, 1)
+    predicted_number = best_model.predict(input_sequence)
+    forecast.append(predicted_number[0][0])
+    time_series = time_series.append(pd.Series([predicted_number[0][0]], index=[time_series.index[-1] + pd.DateOffset(1)]))
+
+# Affichage des numéros prédits
+print("Séquence prédite de 5 numéros:", forecast)
+
+# Tracé des prédictions
+plt.plot(time_series, label='Historical Data')
+plt.plot(pd.date_range(start=time_series.index[-1], periods=forecast_steps, freq='W'), forecast, label='Predictions', color='red')
+plt.legend()
+plt.show()
