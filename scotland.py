@@ -32,6 +32,6 @@ model.compile(loss='mean_squared_error', optimizer='adam')
 model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_test, y_test))
 
 # Faire une prédiction pour la prochaine ligne du CSV
-last_five_numbers = np.array(data[-5:]).reshape(1, 5, 1)
+last_five_numbers = np.array(data[-1][:5]).reshape(1, 5, 1)
 next_number_prediction = model.predict(last_five_numbers)
 print("Prédiction pour le prochain numéro :", next_number_prediction[0][0])
