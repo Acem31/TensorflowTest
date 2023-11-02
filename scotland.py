@@ -35,7 +35,7 @@ X, Y = prepare_data_for_lstm(time_series.values, look_back)
 # Création de la structure du modèle LSTM
 def create_lstm_model(look_back, units=50):
     model = Sequential()
-    model.add(LSTM(units, input_shape=(look_back, 1))
+    model.add(LSTM(units, input_shape=(look_back, 1)))
     model.add(Dense(1))
     model.compile(loss='mean_squared_error', optimizer='adam')
     return model
@@ -48,7 +48,8 @@ param_space = {
     'epochs': Integer(10, 100)
 }
 
-lstm = LSTM()
+model = Sequential()
+model.add(LSTM(units=best_params['units'], input_shape=(best_params['look_back'], 1)))
 opt = BayesSearchCV(lstm, param_space, n_iter=50, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
 
 opt.fit(X.reshape(-1, look_back, 1), Y)
@@ -71,7 +72,7 @@ forecast = []
 
 for i in range(forecast_steps):
     input_sequence = time_series.values[-best_look_back:].reshape(1, best_look_back, 1)
-    predicted_number = best_model.predict(input_sequence)
+    predicted_number = model.predict(input_sequence)
     forecast.append(predicted_number[0][0])
     time_series = time_series.append(pd.Series([predicted_number[0][0]], index=[time_series.index[-1] + pd.DateOffset(1)]))
 
