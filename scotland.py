@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import cross_val_score
 from tensorflow import keras
-from keras.wrappers.scikit_learn import KerasClassifier
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
 # Chargement des données
 data = []
