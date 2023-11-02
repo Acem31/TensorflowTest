@@ -54,7 +54,7 @@ param_space = {
 
 # Créez une fonction pour construire le modèle Keras avec les hyperparamètres
 def build_model(units, batch_size, epochs):
-    model = create_lstm_model(look_back, units)
+    model = create_lstm_model(look_back=int(look_back), units=int(units))
     return model
 
 # Créez un objet KerasClassifier compatible avec scikit-learn
@@ -72,7 +72,7 @@ print("Meilleurs hyperparamètres:", best_params)
 best_units = best_params['units']
 best_batch_size = best_params['batch_size']
 best_epochs = best_params['epochs']
-best_model = create_lstm_model(look_back, best_units)
+best_model = create_lstm_model(look_back, units=int(best_units))
 
 # Entraînez le modèle avec les meilleurs hyperparamètres
 best_model.fit(X.reshape(-1, look_back, 1), Y, epochs=int(best_epochs), batch_size=int(best_batch_size), verbose=1)
