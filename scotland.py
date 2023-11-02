@@ -40,7 +40,7 @@ X, Y = prepare_data_for_lstm(time_series.values, look_back)
 # Création de la structure du modèle LSTM
 def create_lstm_model(look_back, units=50):
     model = Sequential()
-    model.add(LSTM(units, input_shape=(look_back, 1)))
+    model.add(LSTM(units, input_shape=(look_back, 1))
     model.add(Dense(1))
     model.compile(loss='mean_squared_error', optimizer='adam')
     return model
@@ -52,12 +52,12 @@ param_space = {
 }
 
 # Créez une fonction pour construire le modèle Keras avec les hyperparamètres
-def build_model(batch_size, epochs):
+def build_model(batch_size=32, epochs=100):
     model = create_lstm_model(look_back, units=50)  # Remplacez 50 par la valeur que vous souhaitez pour units
     return model
 
 # Créez un objet KerasClassifier compatible avec scikit-learn
-keras_classifier = KerasClassifier(build_fn=build_model, batch_size=32, epochs=100, verbose=0)
+keras_classifier = KerasClassifier(build_fn=build_model, verbose=0)
 
 # Utilisez cet objet dans la recherche des hyperparamètres
 opt = BayesSearchCV(keras_classifier, param_space, n_iter=50, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
