@@ -80,4 +80,16 @@ forecast_steps = 5
 forecast = []
 
 for i in range(forecast_steps):
-    input_sequence = time_series.values[-
+    input_sequence = time_series.values[-look_back:].reshape(1, look_back, 1)
+    predicted_number = best_model.predict(input_sequence)
+    forecast.append(predicted_number[0][0])
+    time_series = time_series.append(pd.Series([predicted_number[0][0]], index=[time_series.index[-1] + pd.DateOffset(1)]))
+
+# Affichage des numéros prédits
+print("Séquence prédite de 5 numéros:", forecast)
+
+# Tracé des prédictions
+plt.plot(time_series, label='Historical Data')
+plt.plot(pd.date_range(start=time_series.index[-1], periods=forecast_steps, freq='W'), forecast, label='Predictions', color='red')
+plt.legend()
+plt.show()
