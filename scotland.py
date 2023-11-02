@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from keras.models import Sequential
 from keras.layers import LSTM, Dense
 from keras.optimizers import Adam
-from keras.wrappers.scikit_learn import KerasRegressor
+from scikeras.wrappers import KerasRegressor
 
 # Charger les données depuis le fichier CSV
 data = []
@@ -29,8 +29,8 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 # Définition de la fonction pour créer le modèle
 def create_model(learning_rate=0.001, activation='linear'):
     model = Sequential()
-    model.add(LSTM(50, input_shape=(5, 1))
-    model.add(Dense(5, activation=activation))
+    model.add(LSTM(50, input_shape=(5, 1)))
+    model.add(Dense(5, activation='tanh'))
     optimizer = Adam(learning_rate=learning_rate)
     model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
@@ -40,7 +40,6 @@ param_grid = {
     'learning_rate': [0.001, 0.01, 0.1],
     'epochs': [50, 100, 200],
     'batch_size': [16, 32, 64],
-    'activation': ['linear', 'relu', 'tanh']
 }
 
 # Créer un modèle basé sur KerasRegressor pour la recherche d'hyperparamètres
