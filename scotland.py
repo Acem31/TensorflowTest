@@ -7,6 +7,10 @@ from keras.models import Sequential
 from keras.layers import LSTM, Dense
 from skopt import BayesSearchCV
 from skopt.space import Real, Integer
+from sklearn.model_selection import train_test_split
+from sklearn.base import BaseEstimator
+from sklearn.model_selection import cross_val_score
+from keras.wrappers.scikit_learn import KerasRegressor
 
 # Chargement des données
 data = []
@@ -48,40 +52,30 @@ param_space = {
     'epochs': Integer(10, 100)
 }
 
-# Utilisation d'une classe Wrapper pour le modèle Keras
-class KerasRegressorWrapper:
-    def __init__(self, look_back, units, batch_size, epochs):
-        self.look_back = look_back
-        self.units = units
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.model = create_lstm_model(look_back, units)
+# Créez une fonction pour construire le modèle Keras avec les hyperparamètres
+def build_model(units, look_back, batch_size, epochs):
+    model = create_lstm_model(look_back, units)
+    return model
 
-    def fit(self, X, y):
-        X = X.reshape(-1, self.look_back, 1)
-        self.model.fit(X, y, epochs=self.epochs, batch_size=self.batch_size, verbose=1)
+# Créez un objet KerasRegressor compatible avec scikit-learn
+keras_regressor = KerasRegressor(build_fn=build_model)
 
-    def predict(self, X):
-        X = X.reshape(-1, self.look_back, 1)
-        return self.model.predict(X)
-
-# Recherche des hyperparamètres optimaux avec le wrapper
-wrapper = KerasRegressorWrapper(look_back, 50, 32, 100)
-opt = BayesSearchCV(wrapper, param_space, n_iter=50, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
-opt.fit(X, Y)
+# Utilisez cet objet dans la recherche des hyperparamètres
+opt = BayesSearchCV(keras_regressor, param_space, n_iter=50, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
+opt.fit(X.reshape(-1, look_back, 1), Y)
 
 # Afficher les meilleurs hyperparamètres
 best_params = opt.best_params_
 print("Meilleurs hyperparamètres:", best_params)
 
-# Créer le modèle final avec les meilleurs hyperparamètres
+# Créez le modèle final avec les meilleurs hyperparamètres
 best_units = best_params['units']
 best_look_back = best_params['look_back']
 best_batch_size = best_params['batch_size']
 best_epochs = best_params['epochs']
 best_model = create_lstm_model(best_look_back, best_units)
 
-# Entraîner le modèle avec les meilleurs hyperparamètres
+# Entraînez le modèle avec les meilleurs hyperparamètres
 best_model.fit(X.reshape(-1, best_look_back, 1), Y, epochs=best_epochs, batch_size=best_batch_size, verbose=1)
 
 # Prédire les numéros futurs
