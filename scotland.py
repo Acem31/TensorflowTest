@@ -31,13 +31,12 @@ def create_model(learning_rate=0.001, activation='linear'):
     model = Sequential()
     model.add(LSTM(50, input_shape=(5, 1)))
     model.add(Dense(5, activation='tanh'))
-    optimizer = Adam(learning_rate=learning_rate)
+    optimizer = Adam(learning_rate=0.001)
     model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
 
 # Hyperparamètres à explorer
 param_grid = {
-    'learning_rate': [0.001, 0.01, 0.1],
     'epochs': [50, 100, 200],
     'batch_size': [16, 32, 64],
 }
