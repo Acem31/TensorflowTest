@@ -43,6 +43,7 @@ while True:
     distance = np.linalg.norm(next_numbers_prediction[0] - data[-1][:5])
     
     print("Prédiction pour les 5 prochains numéros :", next_numbers_prediction[0])
+    print("Dernière ligne du CSV :", data[-1])
     print("Distance euclidienne avec la dernière ligne du CSV :", distance)
     
     if distance < seuil_distance:
