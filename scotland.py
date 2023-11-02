@@ -2,8 +2,9 @@ import csv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.tsa.arima_model import ARIMA
 from sklearn.metrics import mean_squared_error
+from itertools import product
 
 # Chargement des données
 data = []
@@ -18,30 +19,25 @@ data = np.array(data)
 date_range = pd.date_range(start='01-01-2004', periods=len(data), freq='W')
 time_series = pd.Series(data[:, 0], index=date_range)
 
-# Optimisation des hyperparamètres ARIMA
+# Hyperparamètres à tester
+p_values = range(20)
+d_values = range(20)
+q_values = range(20)
+
 best_aic = float("inf")
 best_order = None
 
-for p in range(5):
-    for d in range(2):
-        for q in range(5):
-            try:
-                model = ARIMA(time_series, order=(p, d, q))
-                model_fit = model.fit(disp=0)
-                aic = model_fit.aic
-                if aic < best_aic:
-                    best_aic = aic
-                    best_order = (p, d, q)
-            except:
-                continue
+for p, d, q in product(p_values, d_values, q_values):
+    try:
+        model = ARIMA(time_series, order=(p, d, q))
+        model_fit = model.fit(disp=0)
+        aic = model_fit.aic
+        if aic < best_aic:
+            best_aic = aic
+            best_order = (p, d, q)
+    except:
+        continue
 
-if best_order is not None:
-    model = ARIMA(time_series, order=best_order)
-    model_fit = model.fit(disp=0)
-    # Reste du code pour la prédiction, l'évaluation et l'affichage
-else:
-    print("Aucun meilleur ordre n'a été trouvé. Veuillez ajuster votre recherche d'hyperparamètres.")
-    
 # Entraînement du modèle ARIMA avec les meilleurs hyperparamètres
 model = ARIMA(time_series, order=best_order)
 model_fit = model.fit(disp=0)
