@@ -1,14 +1,10 @@
 import csv
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.layers import LSTM, Dense
-from skopt import BayesSearchCV
-from skopt.space import Integer
-from scikeras.wrappers import KerasClassifier
 
-# Chargement des données
+# Charger les données depuis le fichier CSV
 data = []
 with open('euromillions.csv', 'r') as file:
     reader = csv.reader(file, delimiter=';')
@@ -16,66 +12,26 @@ with open('euromillions.csv', 'r') as file:
         numbers = list(map(int, row[:5]))
         data.append(numbers)
 
-# Transformation des données en une série chronologique pandas
-data = np.array(data)
-date_range = pd.date_range(start='01-01-2004', periods=len(data), freq='W')
-time_series = pd.Series(data[:, 0], index=date_range)
+# Préparer les données pour l'apprentissage
+X = []
+y = []
+for i in range(len(data) - 1):
+    X.append(data[i][:5])
+    y.append(data[i + 1][4])  # Le 6ème numéro est la sortie
+X = np.array(X)
+y = np.array(y)
 
-# Préparation des données pour l'apprentissage
-def prepare_data_for_lstm(data, look_back=5):
-    X, Y = [], []
-    for i in range(len(data) - look_back):
-        X.append(data[i:(i + look_back)])
-        Y.append(data[i + look_back])
-    return np.array(X), np.array(Y)
+# Diviser les données en ensembles d'entraînement et de test
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-look_back = 5
-X, Y = prepare_data_for_lstm(time_series.values, look_back)
+# Créer et entraîner un modèle LSTM
+model = Sequential()
+model.add(LSTM(50, input_shape=(5, 1)))
+model.add(Dense(1, activation='linear'))
+model.compile(loss='mean_squared_error', optimizer='adam')
+model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_test, y_test))
 
-# Création de la structure du modèle LSTM
-def create_lstm_model(look_back, units=50):
-    model = Sequential()
-    model.add(LSTM(units, input_shape=(look_back, 1)))
-    model.add(Dense(1))
-    model.compile(loss='mean_squared_error', optimizer='adam')
-    return model
-
-# Recherche des meilleurs hyperparamètres avec skopt
-param_space = {
-    'batch_size': Integer(1, 32),
-    'epochs': Integer(10, 100)
-}
-
-# Créez un objet KerasClassifier compatible avec scikit-learn
-keras_classifier = KerasClassifier(build_fn=create_lstm_model, verbose=0)
-
-# Utilisez cet objet dans la recherche des hyperparamètres
-opt = BayesSearchCV(keras_classifier, param_space, n_iter=50, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
-opt.fit(X, Y)
-
-# Afficher les meilleurs hyperparamètres
-best_params = opt.best_params_
-print("Meilleurs hyperparamètres:", best_params)
-
-# Entraînez le modèle avec les meilleurs hyperparamètres
-best_model = create_lstm_model(look_back)
-best_model.fit(X, Y, epochs=best_params['epochs'], batch_size=best_params['batch_size'], verbose=1)
-
-# Prédire les numéros futurs
-forecast_steps = 5
-forecast = []
-
-for i in range(forecast_steps):
-    input_sequence = time_series.values[-look_back:].reshape(1, look_back, 1)
-    predicted_number = best_model.predict(input_sequence)
-    forecast.append(int(predicted_number[0][0]))
-    time_series = time_series.append(pd.Series([int(predicted_number[0][0])], index=[time_series.index[-1] + pd.DateOffset(1)]))
-
-# Affichage des numéros prédits
-print("Séquence prédite de 5 numéros:", forecast)
-
-# Tracé des prédictions
-plt.plot(time_series, label='Historical Data')
-plt.plot(pd.date_range(start=time_series.index[-1], periods=forecast_steps, freq='W'), forecast, label='Predictions', color='red')
-plt.legend()
-plt.show()
+# Faire une prédiction pour la prochaine ligne du CSV
+last_five_numbers = np.array(data[-5:]).reshape(1, 5, 1)
+next_number_prediction = model.predict(last_five_numbers)
+print("Prédiction pour le prochain numéro :", next_number_prediction[0][0])
