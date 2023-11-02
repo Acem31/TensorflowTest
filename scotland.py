@@ -68,8 +68,8 @@ best_params = opt.best_params_
 print("Meilleurs hyperparamètres:", best_params)
 
 # Créez le modèle final avec les meilleurs hyperparamètres
-best_batch_size = best_params['batch_size']
-best_epochs = best_params['epochs']
+best_batch_size = int(best_params['batch_size'])
+best_epochs = int(best_params['epochs'])
 best_model = create_lstm_model(look_back, units=50)  # Remplacez 50 par la valeur que vous souhaitez pour units
 
 # Entraînez le modèle avec les meilleurs hyperparamètres
