@@ -47,15 +47,15 @@ def create_lstm_model(look_back, units=50):
 
 # Recherche des meilleurs hyperparamètres avec skopt
 param_space = {
-    'units': Integer(10, 100),
-    'look_back': Integer(1, 10),
-    'batch_size': Integer(1, 32),
-    'epochs': Integer(10, 100)
+    'units': Real(10, 100),
+    'look_back': Real(1, 10),
+    'batch_size': Real(1, 32),
+    'epochs': Real(10, 100)
 }
 
 # Créez une fonction pour construire le modèle Keras avec les hyperparamètres
 def build_model(units, look_back, batch_size, epochs):
-    model = create_lstm_model(look_back, units)
+    model = create_lstm_model(int(look_back), int(units))
     return model
 
 # Créez un objet KerasClassifier compatible avec scikit-learn
@@ -74,17 +74,17 @@ best_units = best_params['units']
 best_look_back = best_params['look_back']
 best_batch_size = best_params['batch_size']
 best_epochs = best_params['epochs']
-best_model = create_lstm_model(best_look_back, best_units)
+best_model = create_lstm_model(int(best_look_back), int(best_units))
 
 # Entraînez le modèle avec les meilleurs hyperparamètres
-best_model.fit(X.reshape(-1, best_look_back, 1), Y, epochs=best_epochs, batch_size=best_batch_size, verbose=1)
+best_model.fit(X.reshape(-1, int(best_look_back), 1), Y, epochs=int(best_epochs), batch_size=int(best_batch_size), verbose=1)
 
 # Prédire les numéros futurs
 forecast_steps = 5
 forecast = []
 
 for i in range(forecast_steps):
-    input_sequence = time_series.values[-best_look_back:].reshape(1, best_look_back, 1)
+    input_sequence = time_series.values[-int(best_look_back):].reshape(1, int(best_look_back), 1)
     predicted_number = best_model.predict(input_sequence)
     forecast.append(predicted_number[0][0])
     time_series = time_series.append(pd.Series([predicted_number[0][0]], index=[time_series.index[-1] + pd.DateOffset(1)]))
