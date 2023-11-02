@@ -2,6 +2,7 @@ import csv
 import numpy as np
 from sklearn.cluster import KMeans
 from skopt import BayesSearchCV
+from sklearn.metrics import silhouette_score
 
 # Chargement des données
 data = []
@@ -15,20 +16,30 @@ with open('euromillions.csv', 'r') as file:
 X = np.array(data)
 
 # Hyperparamètres initiaux
-n_clusters = 10
 n_init = 20
 
 opt = BayesSearchCV(
     KMeans(),
     {
-        'n_clusters': (5, 80),
         'n_init': (10, 300),
         'max_iter': (10, 200),  # Ajoutez max_iter
     },
     random_state=0
 )
 
-# Critère d'arrêt
+# Meilleur K trouvé avec le coefficient de silhouette
+best_silhouette_score = -1
+best_k = None
+
+for k in range(2, 200):
+    kmeans = KMeans(n_clusters=k, n_init=best_params['n_init'], max_iter=best_params['max_iter'], random_state=43, init='k-means++').fit(X)
+    labels = kmeans.labels_
+    silhouette_avg = silhouette_score(X, labels)
+    if silhouette_avg > best_silhouette_score:
+        best_silhouette_score = silhouette_avg
+        best_k = k
+
+# Maintenant, utilisez le meilleur K dans la boucle while
 stop_condition = False
 
 while not stop_condition:
@@ -37,8 +48,8 @@ while not stop_condition:
     best_params = opt.best_params_
 
     # Création du modèle de clustering (K-Means) avec les meilleurs hyperparamètres
-    kmeans = KMeans(n_clusters=best_params['n_clusters'], n_init=best_params['n_init'], max_iter=best_params['max_iter'], random_state=43, verbose=1).fit(X)
-
+    kmeans = KMeans(n_clusters=best_k, n_init=best_params['n_init'], max_iter=best_params['max_iter'], random_state=43, verbose=1).fit(X)
+    
     # Prédiction des 5 premiers numéros de la dernière ligne
     last_row = X[-1][:5]
 
