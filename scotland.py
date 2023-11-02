@@ -27,7 +27,7 @@ y = np.array(y)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Définition de la fonction pour créer le modèle
-def create_model(learning_rate=0.001, activation='linear'):
+def create_model(learning_rate=0.001):
     model = Sequential()
     model.add(LSTM(50, input_shape=(5, 1)))
     model.add(Dense(5, activation='tanh'))
@@ -36,13 +36,14 @@ def create_model(learning_rate=0.001, activation='linear'):
     return model
 
 # Hyperparamètres à explorer
-param_grid = {
+param_grid = {    
+    'learning_rate': [0.001, 0.01, 0.1],  # Ajoutez learning_rate ici
     'epochs': [50, 100, 200],
     'batch_size': [16, 32, 64],
 }
 
 # Créer un modèle basé sur KerasRegressor pour la recherche d'hyperparamètres
-model = KerasRegressor(build_fn=create_model, verbose=0)
+model = KerasRegressor(model=create_model, verbose=0)
 
 # Recherche des meilleures combinaisons d'hyperparamètres
 grid_search = GridSearchCV(estimator=model, param_grid=param_grid, scoring='neg_mean_squared_error', n_jobs=-1)
@@ -53,7 +54,7 @@ best_params = grid_search.best_params_
 print("Meilleures hyperparamètres:", best_params)
 
 # Créez un modèle avec les meilleurs hyperparamètres
-final_model = create_model(learning_rate=best_params['learning_rate'], activation=best_params['activation'])
+final_model = create_model(learning_rate=best_params['learning_rate'])
 final_model.fit(X_train, y_train, epochs=best_params['epochs'], batch_size=best_params['batch_size'], validation_data=(X_test, y_test))
 
 # Seuil de distance pour continuer l'apprentissage
