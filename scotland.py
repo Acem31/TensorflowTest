@@ -47,14 +47,13 @@ def create_lstm_model(look_back, units=50):
 
 # Recherche des meilleurs hyperparamètres avec skopt
 param_space = {
-    'units': Real(10, 100),
     'batch_size': Real(1, 32),
     'epochs': Real(10, 100)
 }
 
 # Créez une fonction pour construire le modèle Keras avec les hyperparamètres
-def build_model(units, batch_size, epochs):
-    model = create_lstm_model(look_back=int(look_back), units=int(units))
+def build_model(batch_size, epochs):
+    model = create_lstm_model(look_back, units=50)  # Remplacez 50 par la valeur que vous souhaitez pour units
     return model
 
 # Créez un objet KerasClassifier compatible avec scikit-learn
@@ -69,10 +68,9 @@ best_params = opt.best_params_
 print("Meilleurs hyperparamètres:", best_params)
 
 # Créez le modèle final avec les meilleurs hyperparamètres
-best_units = best_params['units']
 best_batch_size = best_params['batch_size']
 best_epochs = best_params['epochs']
-best_model = create_lstm_model(look_back, units=int(best_units))
+best_model = create_lstm_model(look_back, units=50)  # Remplacez 50 par la valeur que vous souhaitez pour units
 
 # Entraînez le modèle avec les meilleurs hyperparamètres
 best_model.fit(X.reshape(-1, look_back, 1), Y, epochs=int(best_epochs), batch_size=int(best_batch_size), verbose=1)
@@ -82,16 +80,4 @@ forecast_steps = 5
 forecast = []
 
 for i in range(forecast_steps):
-    input_sequence = time_series.values[-look_back:].reshape(1, look_back, 1)
-    predicted_number = best_model.predict(input_sequence)
-    forecast.append(predicted_number[0][0])
-    time_series = time_series.append(pd.Series([predicted_number[0][0]], index=[time_series.index[-1] + pd.DateOffset(1)]))
-
-# Affichage des numéros prédits
-print("Séquence prédite de 5 numéros:", forecast)
-
-# Tracé des prédictions
-plt.plot(time_series, label='Historical Data')
-plt.plot(pd.date_range(start=time_series.index[-1], periods=forecast_steps, freq='W'), forecast, label='Predictions', color='red')
-plt.legend()
-plt.show()
+    input_sequence = time_series.values[-
