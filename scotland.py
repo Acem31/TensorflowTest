@@ -6,6 +6,7 @@ from keras.models import Sequential
 from keras.layers import LSTM, Dense
 from skopt import BayesSearchCV
 from skopt.space import Integer
+from scikeras.wrappers import KerasClassifier
 
 # Chargement des données
 data = []
