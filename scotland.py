@@ -48,23 +48,41 @@ param_space = {
     'epochs': Integer(10, 100)
 }
 
-model = Sequential()
-opt = BayesSearchCV(lstm, param_space, n_iter=50, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
+# Utilisation d'une classe Wrapper pour le modèle Keras
+class KerasRegressorWrapper:
+    def __init__(self, look_back, units, batch_size, epochs):
+        self.look_back = look_back
+        self.units = units
+        self.batch_size = batch_size
+        self.epochs = epochs
+        self.model = create_lstm_model(look_back, units)
 
-opt.fit(X.reshape(-1, look_back, 1), Y)
-model.add(LSTM(units=best_params['units'], input_shape=(best_params['look_back'], 1)))
+    def fit(self, X, y):
+        X = X.reshape(-1, self.look_back, 1)
+        self.model.fit(X, y, epochs=self.epochs, batch_size=self.batch_size, verbose=1)
+
+    def predict(self, X):
+        X = X.reshape(-1, self.look_back, 1)
+        return self.model.predict(X)
+
+# Recherche des hyperparamètres optimaux avec le wrapper
+wrapper = KerasRegressorWrapper(look_back, 50, 32, 100)
+opt = BayesSearchCV(wrapper, param_space, n_iter=50, cv=3, n_jobs=-1, scoring='neg_mean_squared_error')
+opt.fit(X, Y)
 
 # Afficher les meilleurs hyperparamètres
 best_params = opt.best_params_
 print("Meilleurs hyperparamètres:", best_params)
 
 # Créer le modèle final avec les meilleurs hyperparamètres
-best_units = model.best_params_['units']
-best_look_back = model.best_params_['look_back']
+best_units = best_params['units']
+best_look_back = best_params['look_back']
+best_batch_size = best_params['batch_size']
+best_epochs = best_params['epochs']
 best_model = create_lstm_model(best_look_back, best_units)
 
-# Entraîner le modèle
-best_model.fit(X.reshape(-1, best_look_back, 1), Y, epochs=best_params['epochs'], batch_size=best_params['batch_size'], verbose=1)
+# Entraîner le modèle avec les meilleurs hyperparamètres
+best_model.fit(X.reshape(-1, best_look_back, 1), Y, epochs=best_epochs, batch_size=best_batch_size, verbose=1)
 
 # Prédire les numéros futurs
 forecast_steps = 5
@@ -72,7 +90,7 @@ forecast = []
 
 for i in range(forecast_steps):
     input_sequence = time_series.values[-best_look_back:].reshape(1, best_look_back, 1)
-    predicted_number = model.predict(input_sequence)
+    predicted_number = best_model.predict(input_sequence)
     forecast.append(predicted_number[0][0])
     time_series = time_series.append(pd.Series([predicted_number[0][0]], index=[time_series.index[-1] + pd.DateOffset(1)]))
 
