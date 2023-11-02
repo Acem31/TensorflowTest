@@ -10,7 +10,8 @@ from skopt.space import Real, Integer
 from sklearn.model_selection import train_test_split
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import cross_val_score
-from keras.wrappers.scikit_learn import KerasRegressor
+from tensorflow import keras
+from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
 
 # Chargement des données
 data = []
@@ -39,7 +40,7 @@ X, Y = prepare_data_for_lstm(time_series.values, look_back)
 # Création de la structure du modèle LSTM
 def create_lstm_model(look_back, units=50):
     model = Sequential()
-    model.add(LSTM(units, input_shape=(look_back, 1)))
+    model.add(LSTM(units, input_shape=(look_back, 1))
     model.add(Dense(1))
     model.compile(loss='mean_squared_error', optimizer='adam')
     return model
