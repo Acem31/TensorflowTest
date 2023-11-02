@@ -67,13 +67,16 @@ opt.fit(X.reshape(-1, look_back, 1), Y)
 best_params = opt.best_params_
 print("Meilleurs hyperparamètres:", best_params)
 
-# Créez le modèle final avec les meilleurs hyperparamètres
+# Après avoir obtenu les meilleurs hyperparamètres
+best_params = opt.best_params_
 best_batch_size = int(best_params['batch_size'])
 best_epochs = int(best_params['epochs'])
+
+# Créez le modèle final avec les meilleurs hyperparamètres
 best_model = create_lstm_model(look_back, units=50)  # Remplacez 50 par la valeur que vous souhaitez pour units
 
 # Entraînez le modèle avec les meilleurs hyperparamètres
-best_model.fit(X.reshape(-1, look_back, 1), Y, epochs=int(best_epochs), batch_size=int(best_batch_size), verbose=1)
+best_model.fit(X.reshape(-1, look_back, 1), Y, epochs=best_epochs, batch_size=best_batch_size, verbose=1)
 
 # Prédire les numéros futurs
 forecast_steps = 5
