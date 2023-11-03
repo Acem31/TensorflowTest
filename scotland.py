@@ -51,11 +51,11 @@ grid_search.fit(X_train, y_train)
 
 # Obtenez les meilleurs hyperparamètres
 best_params = grid_search.best_params_
-print("Meilleures hyperparamètres:", best_params)
 
 # Créez un modèle avec les meilleurs hyperparamètres
-final_model = create_model(learning_rate=best_params['learning_rate'])
-final_model.fit(X_train, y_train, epochs=best_params['epochs'], batch_size=best_params['batch_size'], validation_data=(X_test, y_test))
+final_model = KerasRegressor(build_fn=create_model, verbose=0, **best_params)
+final_model.model.fit(X_train, y_train, epochs=best_params['epochs'], batch_size=best_params['batch_size'], validation_data=(X_test, y_test))
+print("Meilleures hyperparamètres:", best_params)
 
 # Seuil de distance pour continuer l'apprentissage
 seuil_distance = 5.0
