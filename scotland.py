@@ -42,12 +42,16 @@ tuner = RandomSearch(
     max_trials=100,  # Nombre de modèles à essayer
     directory='my_dir',  # Répertoire pour enregistrer les résultats
     project_name='euromillions'
+    overwrite=False  # Assurez-vous que les résultats précédents ne sont pas écrasés
 )
+
+# Définissez la plage d'epochs à explorer
+tuner.search_space.update({'epochs': hp.Int('epochs', min_value=50, max_value=200, step=10)})
 
 # Divisez les données en ensembles d'entraînement et de validation
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
-tuner.search(X_train, y_train, epochs=200, validation_data=(X_val, y_val))
+tuner.search(X_train, y_train, epochs=hp.get('epochs'), validation_data=(X_val, y_val))
 
 # Obtenez les meilleurs hyperparamètres
 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
