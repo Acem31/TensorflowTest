@@ -27,10 +27,10 @@ y = np.array(y)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Définition de la fonction pour créer le modèle
-def create_model(learning_rate=0.001):
+def create_model(learning_rate=0.001, epochs=50, batch_size=16, activation='tanh'):
     model = Sequential()
     model.add(LSTM(50, input_shape=(5, 1)))
-    model.add(Dense(5, activation='tanh'))
+    model.add(Dense(5, activation=activation))
     optimizer = Adam(learning_rate=learning_rate)
     model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
@@ -40,6 +40,7 @@ param_grid = {
     'learning_rate': [0.001, 0.01, 0.1],
     'epochs': [50, 100, 200],
     'batch_size': [16, 32, 64],
+    'activation': ['linear', 'tanh', 'relu']
 }
 
 # Créer un modèle basé sur KerasRegressor pour la recherche d'hyperparamètres
@@ -63,14 +64,14 @@ seuil_distance = 5.0
 while True:
     last_five_numbers = np.array(data[-1][:5]).reshape(1, 5, 1)
     next_numbers_prediction = final_model.predict(last_five_numbers)
-    
+
     # Calcul de la distance euclidienne entre la prédiction et la dernière ligne du CSV
     distance = np.linalg.norm(next_numbers_prediction[0] - data[-1][:5])
-    
+
     print("Prédiction pour les 5 prochains numéros :", next_numbers_prediction[0])
     print("Dernière ligne du CSV :", data[-1][:5])
     print("Distance euclidienne avec la dernière ligne du CSV :", distance)
-    
+
     if distance < seuil_distance:
         break
 
