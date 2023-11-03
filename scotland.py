@@ -33,6 +33,10 @@ def find_optimal_hyperparameters(X_train, y_train):
         model.compile(loss='mean_squared_error', optimizer=optimizer)
         return model
 
+
+    # Créer un modèle basé sur KerasRegressor pour la recherche d'hyperparamètres
+    model = KerasRegressor(build_fn=create_model, verbose=0)
+    
     # Hyperparamètres à explorer
     param_grid = {
         'learning_rate': [0.001, 0.01, 0.1],
@@ -40,9 +44,6 @@ def find_optimal_hyperparameters(X_train, y_train):
         'batch_size': [16, 32, 64],
         'activation': ['linear', 'tanh', 'relu']
     }
-
-    # Créer un modèle basé sur KerasRegressor pour la recherche d'hyperparamètres
-    model = KerasRegressor(build_fn=create_model, verbose=0)
 
     # Recherche des meilleures combinaisons d'hyperparamètres
     grid_search = GridSearchCV(estimator=model, param_grid=param_grid, scoring='neg_mean_squared_error', n_jobs=-1)
