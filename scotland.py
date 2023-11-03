@@ -1,12 +1,12 @@
 import csv
 import numpy as np
-from sklearn.model_selection import train_test_split, RandomizedSearchCV
+from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.layers import LSTM, Dense
 from keras.optimizers import Adam
-from scikeras.wrappers import KerasRegressor
 from keras.layers import Activation
-from scipy.stats import uniform, randint
+from kerastuner.tuners import RandomSearch
+from kerastuner.engine.hyperparameters import HyperParameters
 
 # Charger les données depuis le fichier CSV
 data = []
@@ -25,45 +25,45 @@ for i in range(len(data) - 1):
 X = np.array(X)
 y = np.array(y)
 
-def create_model(learning_rate=0.001, activation='linear', units=50):
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+def build_hyper_model(hp):
     model = Sequential()
-    model.add(LSTM(units, input_shape=(5, 1))
+    model.add(LSTM(units=hp.Int('units', min_value=20, max_value=100, step=1), input_shape=(5, 1))
     model.add(Dense(5))
-    model.add(Activation(activation))
-    optimizer = Adam(learning_rate=learning_rate)
+    model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu'])))
+    optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=0.0001, max_value=0.1, sampling='log'))
     model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
 
-# Hyperparamètres à explorer
-param_dist = {
-    'learning_rate': uniform(0.0001, 0.1),
-    'activation': ['linear', 'tanh', 'relu'],
-    'units': randint(20, 100),
-    'epochs': randint(50, 201),
-    'batch_size': randint(16, 65)
-}
+tuner = RandomSearch(
+    build_hyper_model,
+    objective='val_loss',
+    max_trials=100,  # Nombre de modèles à essayer
+    directory='my_dir',  # Répertoire pour enregistrer les résultats
+    project_name='euromillions'
+)
 
-# Créer un modèle basé sur KerasRegressor pour la recherche d'hyperparamètres
-model = KerasRegressor(build_fn=create_model, verbose=0)
+# Divisez les données en ensembles d'entraînement et de validation
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
-# Recherche des meilleures combinaisons d'hyperparamètres avec RandomizedSearchCV
-random_search = RandomizedSearchCV(estimator=model, param_distributions=param_dist, 
-                                   n_iter=100, scoring='neg_mean_squared_error', n_jobs=-1)
-random_search.fit(X_train, y_train)
+tuner.search(X_train, y_train, epochs=200, validation_data=(X_val, y_val))
 
 # Obtenez les meilleurs hyperparamètres
-best_params = random_search.best_params_
+best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
 # Créez un modèle avec les meilleurs hyperparamètres
-final_model = KerasRegressor(build_fn=create_model, verbose=0, **best_params)
-final_model.model.fit(X_train, y_train, epochs=best_params['epochs'], batch_size=best_params['batch_size'])
+model = tuner.hypermodel.build(best_hps)
+model.fit(X_train, y_train, epochs=best_hps.get('epochs'), batch_size=best_hps.get('batch_size'))
+
+tuner.results_summary()
 
 # Seuil de distance pour continuer l'apprentissage
 seuil_distance = 5.0
 
 while True:
     last_five_numbers = np.array(data[-1][:5]).reshape(1, 5, 1)
-    next_numbers_prediction = final_model.predict(last_five_numbers)
+    next_numbers_prediction = model.predict(last_five_numbers)
 
     # Calcul de la distance euclidienne entre la prédiction et la dernière ligne du CSV
     distance = np.linalg.norm(next_numbers_prediction[0] - data[-1][:5])
