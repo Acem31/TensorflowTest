@@ -6,6 +6,23 @@ from keras.layers import LSTM, Dense
 from keras.optimizers import Adam
 from scikeras.wrappers import KerasRegressor
 
+# Charger les données depuis le fichier CSV
+data = []
+with open('euromillions.csv', 'r') as file:
+    reader = csv.reader(file, delimiter=';')
+    for row in reader:
+        numbers = list(map(int, row))
+        data.append(numbers)
+
+# Préparer les données pour l'apprentissage
+X = []
+y = []
+for i in range(len(data) - 1):
+    X.append(data[i][:5])
+    y.append(data[i + 1][:5])  # Les 5 numéros suivants sont la sortie
+X = np.array(X)
+y = np.array(y)
+
 def find_optimal_hyperparameters(X_train, y_train):
     # Définition de la fonction pour créer le modèle
     def create_model(learning_rate=0.001, epochs=50, batch_size=16, activation='tanh'):
