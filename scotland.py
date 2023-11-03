@@ -31,19 +31,19 @@ def create_model(learning_rate=0.001):
     model = Sequential()
     model.add(LSTM(50, input_shape=(5, 1)))
     model.add(Dense(5, activation='tanh'))
-    optimizer = Adam(learning_rate=0.001)
+    optimizer = Adam(learning_rate=learning_rate)
     model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
 
 # Hyperparamètres à explorer
-param_grid = {    
-    'learning_rate': [0.001, 0.01, 0.1],  # Ajoutez learning_rate ici
+param_grid = {
+    'learning_rate': [0.001, 0.01, 0.1],
     'epochs': [50, 100, 200],
     'batch_size': [16, 32, 64],
 }
 
 # Créer un modèle basé sur KerasRegressor pour la recherche d'hyperparamètres
-model = KerasRegressor(model=create_model, verbose=0)
+model = KerasRegressor(build_fn=create_model, verbose=0)
 
 # Recherche des meilleures combinaisons d'hyperparamètres
 grid_search = GridSearchCV(estimator=model, param_grid=param_grid, scoring='neg_mean_squared_error', n_jobs=-1)
@@ -68,7 +68,7 @@ while True:
     distance = np.linalg.norm(next_numbers_prediction[0] - data[-1][:5])
     
     print("Prédiction pour les 5 prochains numéros :", next_numbers_prediction[0])
-    print("Dernière ligne du CSV :", data[-1])
+    print("Dernière ligne du CSV :", data[-1][:5])
     print("Distance euclidienne avec la dernière ligne du CSV :", distance)
     
     if distance < seuil_distance:
