@@ -33,7 +33,7 @@ def build_hyper_model(hp):
     model.add(Dense(5))
     model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu'])))
     optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=0.0001, max_value=0.1, sampling='log'))
-    model.compile(loss='mean_squared_error', optimizer=optimizer)
+    model.compile(loss='mean_squared_error', optimizer=optimizer, epochs=hp.Int('epochs', min_value=50, max_value=200, step=10))
     return model
 
 tuner = RandomSearch(
@@ -44,9 +44,6 @@ tuner = RandomSearch(
     project_name='euromillions'
     overwrite=False  # Assurez-vous que les résultats précédents ne sont pas écrasés
 )
-
-# Définissez la plage d'epochs à explorer
-tuner.search_space.update({'epochs': hp.Int('epochs', min_value=50, max_value=200, step=10)})
 
 # Divisez les données en ensembles d'entraînement et de validation
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
