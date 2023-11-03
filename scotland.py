@@ -33,7 +33,7 @@ def build_hyper_model(hp):
     model.add(Dense(5))
     model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu'])))
     optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=0.0001, max_value=0.1, sampling='log'))
-    model.compile(loss='mean_squared_error', optimizer=optimizer, epochs=hp.Int('epochs', min_value=50, max_value=200, step=10))
+    model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
 
 tuner = RandomSearch(
@@ -41,7 +41,6 @@ tuner = RandomSearch(
     objective='val_loss',
     max_trials=100,  # Nombre de modèles à essayer
     directory='my_dir',  # Répertoire pour enregistrer les résultats
-    project_name='euromillions'
     overwrite=False  # Assurez-vous que les résultats précédents ne sont pas écrasés
 )
 
