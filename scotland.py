@@ -13,7 +13,7 @@ data = []
 with open('euromillions.csv', 'r') as file:
     reader = csv.reader(file, delimiter=';')
     for row in reader:
-        numbers = list(map(int, row))
+        numbers = list(map int(row))
         data.append(numbers)
 
 # Préparer les données pour l'apprentissage
@@ -29,11 +29,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 def build_hyper_model(hp):
     model = Sequential()
-    model.add(LSTM(units=hp.Int('units', min_value=20, max_value=100, step=1), input_shape=(5, 1)))
+    model.add(LSTM(units=hp.Int('units', min_value=20, max_value=100, step=1), input_shape=(5, 1))
     model.add(Dense(5))
     model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu'])))
     optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=0.0001, max_value=0.1, sampling='log'))
-    model.compile(loss='mean_squared_error', optimizer=optimizer)
+    model.compile(loss='mean_squared_error', optimizer=optimizer, epochs=hp.Int('epochs', min_value=50, max_value=200, step=10))
     return model
 
 tuner = RandomSearch(
@@ -46,9 +46,9 @@ tuner = RandomSearch(
 
 # Divisez les données en ensembles d'entraînement et de validation
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
-best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
-tuner.search(X_train, y_train, epochs=hp.get('epochs'), validation_data=(X_val, y_val))
+# Lancer la recherche d'hyperparamètres
+tuner.search(X_train, y_train)
 
 # Obtenez les meilleurs hyperparamètres
 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
