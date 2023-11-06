@@ -33,6 +33,7 @@ def build_hyper_model(hp):
     model.add(Dense(5))
     model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu'])))
     optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=0.0001, max_value=0.1, sampling='log'))
+    model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
 
 tuner = RandomSearch(
