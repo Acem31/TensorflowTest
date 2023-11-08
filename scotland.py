@@ -6,6 +6,7 @@ from keras.layers import LSTM, Dense
 from keras.optimizers import Adam
 from keras.layers import Activation
 from kerastuner.tuners import RandomSearch
+from keras.callbacks import EarlyStopping
 from kerastuner.engine.hyperparameters import HyperParameters
 
 # Charger les données depuis le fichier CSV
@@ -52,13 +53,14 @@ tuner = RandomSearch(
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
 tuner.search(X_train, y_train, epochs=200, validation_data=(X_val, y_val))
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
 # Obtenez les meilleurs hyperparamètres
 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
 # Créez un modèle avec les meilleurs hyperparamètres
 model = tuner.hypermodel.build(best_hps)
-model.fit(X_train, y_train, epochs=200, batch_size=1032)
+model.fit(X_train, y_train, epochs=200, batch_size=1032, validation_data=(X_val, y_val), callbacks=[early_stopping])
 
 tuner.results_summary()
 
