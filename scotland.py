@@ -13,15 +13,15 @@ data = []
 with open('euromillions.csv', 'r') as file:
     reader = csv.reader(file, delimiter=';')
     for row in reader:
-        numbers = list(map(int, row))
+        numbers = list(map(int, row[:5]))  # Utilisez les 5 premiers numéros pour former un tuple
         data.append(numbers)
 
 # Préparer les données pour l'apprentissage
 X = []
 y = []
 for i in range(len(data) - 1):
-    X.append(data[i][:5])
-    y.append(data[i + 1][:5])  # Les 5 numéros suivants sont la sortie
+    X.append(data[i])
+    y.append(data[i + 1])  # Les 5 numéros suivants sont la sortie
 X = np.array(X)
 y = np.array(y)
 
@@ -29,7 +29,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 def build_hyper_model(hp):
     model = Sequential()
-    model.add(LSTM(units=hp.Int('units', min_value=20, max_value=100, step=1), input_shape=(5, 1))
+    model.add(LSTM(units=hp.Int('units', min_value=20, max_value=100, step=1), input_shape=(5,)))
     model.add(Dense(5))
     model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu'])))
     optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=0.0001, max_value=0.1, sampling='log'))
@@ -62,14 +62,14 @@ tuner.results_summary()
 seuil_distance = 5.0
 
 while True:
-    last_five_numbers = np.array(data[-1][:5]).reshape(1, 5, 1)
+    last_five_numbers = np.array(data[-1]).reshape(1, 5)
     next_numbers_prediction = model.predict(last_five_numbers)
 
     # Calcul de la distance euclidienne entre la prédiction et la dernière ligne du CSV
-    distance = np.linalg.norm(next_numbers_prediction[0] - data[-1][:5])
+    distance = np.linalg.norm(next_numbers_prediction[0] - data[-1])
 
     print("Prédiction pour les 5 prochains numéros :", next_numbers_prediction[0])
-    print("Dernière ligne du CSV :", data[-1][:5])
+    print("Dernière ligne du CSV :", data[-1])
     print("Distance euclidienne avec la dernière ligne du CSV :", distance)
 
     if distance < seuil_distance:
