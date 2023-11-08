@@ -58,7 +58,7 @@ best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 
 # Créez un modèle avec les meilleurs hyperparamètres
 model = tuner.hypermodel.build(best_hps)
-model.fit(X_train, y_train, epochs=200, batch_size=best_hps.get('batch_size'))
+model.fit(X_train, y_train, epochs=200, batch_size=1032)
 
 tuner.results_summary()
 
