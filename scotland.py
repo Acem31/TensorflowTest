@@ -25,6 +25,10 @@ for i in range(len(data) - 1):
 X = np.array(X)
 y = np.array(y)
 
+# Remodeler les données d'entraînement pour être en 3D
+X = X.reshape(X.shape[0], X.shape[1], 1)
+y = y.reshape(y.shape[0], y.shape[1], 1)
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 def build_hyper_model(hp):
