@@ -8,6 +8,7 @@ from keras.layers import Activation
 from kerastuner.tuners import RandomSearch
 from keras.callbacks import EarlyStopping
 from keras.layers import Dropout
+from keras.layers import Bidirectional
 from kerastuner.engine.hyperparameters import HyperParameters
 
 # Charger les données depuis le fichier CSV
@@ -35,13 +36,13 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 def build_hyper_model(hp):
     model = Sequential()
-    model.add(Bidirectional(LSTM(units=hp.Int('units_1', min_value=20, max_value=200, step=1), input_shape=(5, 1), return_sequences=True))
+    model.add(Bidirectional(LSTM(units=hp.Int('units_1', min_value=20, max_value=200, step=1), input_shape=(5, 1), return_sequences=True)))
     dropout_rate_1 = hp.Float('dropout_rate_1', min_value=0.0, max_value=0.5, step=0.1)
     model.add(Dropout(rate=dropout_rate_1))  # Couche de régularisation
-    model.add(Bidirectional(LSTM(units=hp.Int('units_2', min_value=20, max_value=200, step=1), return_sequences=True))
+    model.add(Bidirectional(LSTM(units=hp.Int('units_2', min_value=20, max_value=200, step=1), return_sequences=True)))
     dropout_rate_2 = hp.Float('dropout_rate_2', min_value=0.0, max_value=0.5, step=0.1)
     model.add(Dropout(rate=dropout_rate_2))  # Couche de régularisation
-    model.add(Bidirectional(LSTM(units=hp.Int('units_3', min_value=20, max_value=200, step=1), return_sequences=True))
+    model.add(Bidirectional(LSTM(units=hp.Int('units_3', min_value=20, max_value=200, step=1), return_sequences=True)))
     dropout_rate_3 = hp.Float('dropout_rate_3', min_value=0.0, max_value=0.5, step=0.1)
     model.add(Dropout(rate=dropout_rate_3))
     model.add(Dense(1))
