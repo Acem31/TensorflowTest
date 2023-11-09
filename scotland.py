@@ -41,7 +41,7 @@ def build_hyper_model(hp):
     model.add(Dropout(rate=0.2))  # Couche de régularisation
     model.add(LSTM(units=hp.Int('units_3', min_value=20, max_value=200, step=1), return_sequences=True))
     model.add(Dropout(rate=0.2))
-    model.add(Dense(5))
+    model.add(Dense(1))
     model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu'])))
     optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=0.0001, max_value=2, sampling='log'))
     model.compile(loss='mean_squared_error', optimizer=optimizer)
