@@ -64,7 +64,7 @@ tuner = BayesianOptimization(
     num_initial_points=10,  # Nombre initial de points à évaluer de manière aléatoire
     alpha=1e-4,  # Paramètre alpha pour la régularisation du modèle bayésien
     beta=2.6,  # Paramètre beta pour la régularisation du modèle bayésien
-    num_iterations=50  # Nombre total d'itérations (modèles à évaluer)
+    max_trials=150  # Nombre total d'itérations (modèles à évaluer)
 )
 
 # Divisez les données en ensembles d'entraînement et de validation
