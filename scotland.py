@@ -8,6 +8,7 @@ from keras.layers import Activation
 from kerastuner.tuners import RandomSearch
 from keras.callbacks import EarlyStopping
 from keras.layers import Dropout
+from kerastuner.tuners import BayesianOptimization
 from kerastuner.engine.hyperparameters import HyperParameters
 
 # Charger les données depuis le fichier CSV
@@ -50,12 +51,20 @@ def build_hyper_model(hp):
     model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
 
-tuner = RandomSearch(
+#tuner = RandomSearch(
+#    build_hyper_model,
+#    objective='val_loss',
+#    max_trials=532,  # Nombre de modèles à essayer
+#    directory='my_dir',  # Répertoire pour enregistrer les résultats
+#    project_name='euromillions'
+#)
+tuner = BayesianOptimization(
     build_hyper_model,
     objective='val_loss',
-    max_trials=532,  # Nombre de modèles à essayer
-    directory='my_dir',  # Répertoire pour enregistrer les résultats
-    project_name='euromillions'
+    num_initial_points=10,  # Nombre initial de points à évaluer de manière aléatoire
+    alpha=1e-4,  # Paramètre alpha pour la régularisation du modèle bayésien
+    beta=2.6,  # Paramètre beta pour la régularisation du modèle bayésien
+    num_iterations=50  # Nombre total d'itérations (modèles à évaluer)
 )
 
 # Divisez les données en ensembles d'entraînement et de validation
