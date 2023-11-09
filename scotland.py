@@ -36,11 +36,14 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 def build_hyper_model(hp):
     model = Sequential()
     model.add(LSTM(units=hp.Int('units_1', min_value=20, max_value=200, step=1), input_shape=(5, 1), return_sequences=True))
-    model.add(Dropout(rate=0.2))  # Couche de régularisation
+    dropout_rate_1 = hp.Float('dropout_rate_1', min_value=0.0, max_value=0.5, step=0.1)
+    model.add(Dropout(rate=dropout_rate_1))  # Couche de régularisation
     model.add(LSTM(units=hp.Int('units_2', min_value=20, max_value=200, step=1), return_sequences=True))
-    model.add(Dropout(rate=0.2))  # Couche de régularisation
+    dropout_rate_2 = hp.Float('dropout_rate_2', min_value=0.0, max_value=0.5, step=0.1)
+    model.add(Dropout(rate=dropout_rate_2))  # Couche de régularisation
     model.add(LSTM(units=hp.Int('units_3', min_value=20, max_value=200, step=1), return_sequences=True))
-    model.add(Dropout(rate=0.2))
+    dropout_rate_3 = hp.Float('dropout_rate_3', min_value=0.0, max_value=0.5, step=0.1)
+    model.add(Dropout(rate=dropout_rate_3))
     model.add(Dense(1))
     model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu'])))
     optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=0.0001, max_value=2, sampling='log'))
