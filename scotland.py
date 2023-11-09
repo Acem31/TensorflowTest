@@ -45,7 +45,7 @@ def build_hyper_model(hp):
     dropout_rate_3 = hp.Float('dropout_rate_3', min_value=0.0, max_value=0.5, step=0.1)
     model.add(Dropout(rate=dropout_rate_3))
     model.add(Dense(1))
-    model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu', 'sigmoid', 'LeakyReLU', 'elu', 'softmax', 'swish'])))
+    model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu', 'sigmoid', 'LeakyReLU', 'elu', 'softmax', 'swish', 'gelu', 'selu'])))
     optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=0.0001, max_value=2, sampling='log'))
     model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
@@ -62,7 +62,7 @@ tuner = RandomSearch(
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
 tuner.search(X_train, y_train, epochs=200, validation_data=(X_val, y_val))
-early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min', restore_best_weights=True)
 
 # Obtenez les meilleurs hyperparamètres
 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
