@@ -34,8 +34,12 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 def build_hyper_model(hp):
     model = Sequential()
-    model.add(LSTM(units=hp.Int('units', min_value=20, max_value=200, step=1), input_shape=(5,1)))
-    model.add(Dense(5))
+    model.add(LSTM(units=hp.Int('units_1', min_value=20, max_value=200, step=1), input_shape=(5, 1), return_sequences=True))
+    model.add(Dropout(rate=0.2))  # Couche de régularisation
+    model.add(LSTM(units=hp.Int('units_2', min_value=20, max_value=200, step=1), return_sequences=True))
+    model.add(Dropout(rate=0.2))  # Couche de régularisation
+    model.add(LSTM(units=hp.Int('units_3', min_value=20, max_value=200, step=1), return_sequences=True))
+    model.add(Dropout(rate=0.2))    model.add(Dense(5))
     model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu'])))
     optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=0.0001, max_value=2, sampling='log'))
     model.compile(loss='mean_squared_error', optimizer=optimizer)
