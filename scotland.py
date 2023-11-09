@@ -76,11 +76,12 @@ seuil_distance = 5.0
 while True:
     last_five_numbers = np.array(data[-1]).reshape(1, 5)
     next_numbers_prediction = model.predict(last_five_numbers)
+    rounded_predictions = np.round(next_numbers_prediction[0])
 
     # Calcul de la distance euclidienne entre la prédiction et la dernière ligne du CSV
-    distance = np.linalg.norm(next_numbers_prediction[0] - data[-1])
+    distance = np.linalg.norm(rounded_predictions - data[-1])
 
-    print("Prédiction pour les 5 prochains numéros :", next_numbers_prediction[0])
+    print("Prédiction pour les 5 prochains numéros :", rounded_predictions)
     print("Dernière ligne du CSV :", data[-1])
     print("Distance euclidienne avec la dernière ligne du CSV :", distance)
 
