@@ -7,6 +7,7 @@ from keras.optimizers import Adam
 from keras.layers import Activation
 from kerastuner.tuners import RandomSearch
 from keras.callbacks import EarlyStopping
+from keras.layers import Dropout
 from kerastuner.engine.hyperparameters import HyperParameters
 
 # Charger les données depuis le fichier CSV
