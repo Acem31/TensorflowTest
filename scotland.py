@@ -48,7 +48,7 @@ def build_hyper_model(hp):
 tuner = RandomSearch(
     build_hyper_model,
     objective='val_loss',
-    max_trials=1032,  # Nombre de modèles à essayer
+    max_trials=532,  # Nombre de modèles à essayer
     directory='my_dir',  # Répertoire pour enregistrer les résultats
     project_name='euromillions'
 )
