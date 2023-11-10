@@ -9,6 +9,7 @@ from kerastuner.tuners import RandomSearch
 from keras.callbacks import EarlyStopping
 from keras.layers import Dropout
 from kerastuner.tuners import BayesianOptimization
+from keras.optimizers import Adam, RMSprop, SGD, Nadam, Adagrad
 from kerastuner.engine.hyperparameters import HyperParameters
 
 # Charger les données depuis le fichier CSV
@@ -47,7 +48,19 @@ def build_hyper_model(hp):
     model.add(Dropout(rate=dropout_rate_3))
     model.add(Dense(1))
     model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu', 'sigmoid', 'LeakyReLU', 'elu', 'softmax', 'swish', 'gelu', 'selu'])))
-    optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=0.0001, max_value=2, sampling='log'))
+    # Ajoutez une nouvelle dimension pour l'optimiseur
+    optimizer_choice = hp.Choice('optimizer', values=['adam', 'rmsprop', 'sgd', 'nadam', 'adagrad'])
+    
+    if optimizer_choice == 'adam':
+        optimizer = Adam(learning_rate=hp.Float('adam_learning_rate', min_value=0.0001, max_value=2, sampling='log'))
+    elif optimizer_choice == 'rmsprop':
+        optimizer = RMSprop(learning_rate=hp.Float('rmsprop_learning_rate', min_value=0.0001, max_value=2, sampling='log'))
+    elif optimizer_choice == 'sgd':
+        optimizer = SGD(learning_rate=hp.Float('sgd_learning_rate', min_value=0.0001, max_value=2, sampling='log'))
+    elif optimizer_choice == 'nadam':
+        optimizer = Nadam(learning_rate=hp.Float('nadam_learning_rate', min_value=0.0001, max_value=2, sampling='log'))
+    elif optimizer_choice == 'adagrad':
+        optimizer = Adagrad(learning_rate=hp.Float('adagrad_learning_rate', min_value=0.0001, max_value=2, sampling='log'))
     model.compile(loss='mean_squared_error', optimizer=optimizer)
     return model
 
