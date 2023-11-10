@@ -1,7 +1,7 @@
 import csv
 import numpy as np
 from sklearn.model_selection import train_test_split
-from autokeras import StructuredDataRegressor, HyperParameters
+from autokeras import StructuredDataRegressor
 from autokeras.tuners import BayesianOptimization
 from keras.callbacks import EarlyStopping
 from keras_tuner import HyperParameters
@@ -43,13 +43,13 @@ def search_space(hp: HyperParameters):
     return model
 
 # Exemple avec BayesianOptimization
-tuner = BayesianOptimization(
+tuner = Hyperband(
     hypermodel=search_space,
     objective='val_loss',
-    max_trials=150,
-    num_initial_points=10,
-    alpha=1e-4,
+    max_epochs=200,
+    factor=3,
     directory='autokeras',
+    project_name='euromillions',
     overwrite=True,
 )
 clf = StructuredDataRegressor(tuner=tuner)
