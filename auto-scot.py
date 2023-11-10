@@ -23,12 +23,26 @@ y = np.array(y)
 # Divisez les données en ensembles d'entraînement et de test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Utiliser AutoKeras pour la régression avec sortie de probabilité
-regression = ak.StructuredDataRegressor(max_trials=150, overwrite=True, seed=42, objective="val_accuracy")
+# Utiliser AutoKeras pour la classification avec CNN et sortie de probabilité
+# Remarque : Il est recommandé d'utiliser les modèles ImageRegressor ou ImageClassifier
+# pour les tâches impliquant des données structurées avec une représentation image-like.
+# Utilisez la transformation 'reshape' pour préparer les données comme une image.
+X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
+X_test = X_test.reshape(X_test.shape[0], X_test.shape[1], 1)
+
+# Utiliser AutoKeras pour la classification
+clf = ak.ImageClassifier(
+    max_trials=150,
+    overwrite=True,
+    seed=42,
+    objective="val_loss",
+    multilabel=True,  # Pour la sortie de probabilité
+    metrics=['accuracy'],  # Ajout de la métrique accuracy
+)
 
 # Rechercher le meilleur modèle
-regression.fit(X_train, y_train, epochs=200, validation_split=0.2)
+clf.fit(X_train, y_train, epochs=200, validation_split=0.2)
 
 # Obtenir les prédictions de probabilité sur l'ensemble de test
-probabilities = regression.predict(X_test, return_probabilities=True)
+probabilities = clf.predict(X_test, return_probabilities=True)
 print(probabilities)
