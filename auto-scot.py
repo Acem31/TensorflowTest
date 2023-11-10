@@ -23,12 +23,12 @@ y = np.array(y)
 # Divisez les données en ensembles d'entraînement et de test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Utiliser AutoKeras pour la régression
-regression = ak.StructuredDataRegressor(max_trials=150, overwrite=True, seed=42)
+# Utiliser AutoKeras pour la régression avec sortie de probabilité
+regression = ak.StructuredDataRegressor(max_trials=150, overwrite=True, seed=42, objective="val_accuracy")
 
 # Rechercher le meilleur modèle
 regression.fit(X_train, y_train, epochs=200, validation_split=0.2)
 
-# Évaluer le modèle sur l'ensemble de test
-results = regression.evaluate(X_test, y_test)
-print(results)
+# Obtenir les prédictions de probabilité sur l'ensemble de test
+probabilities = regression.predict(X_test, return_probabilities=True)
+print(probabilities)
