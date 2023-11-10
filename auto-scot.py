@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from autokeras import StructuredDataRegressor, HyperParameters
 from autokeras.tuners import BayesianOptimization
 from keras.callbacks import EarlyStopping
+from keras_tuner import HyperParameters
 
 # Charger les données depuis le fichier CSV
 data = []
