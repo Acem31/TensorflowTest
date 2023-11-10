@@ -33,6 +33,10 @@ y = np.array(y)
 X = X.reshape(X.shape[0], X.shape[1], 1)
 y = y.reshape(y.shape[0], y.shape[1], 1)
 
+# Convertir les données en type int64
+X = X.astype(np.int64)
+y = y.astype(np.int64)
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 def build_hyper_model(hp):
