@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import Dense, Dropout
+from keras.utils import to_categorical
 
 # Charger les données depuis le fichier CSV
 data = pd.read_csv('euromillions.csv', delimiter=';')
@@ -23,23 +24,26 @@ for i in range(len(numbers_normalized) - 6):  # Utilisez les 6 derniers tirages 
 X = np.array(X)
 y = np.array(y)
 
+# Convertir les étiquettes en format catégoriel
+y_categorical = to_categorical(y, num_classes=33)
+
 # Diviser les données en ensembles d'entraînement et de test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train_categorical, y_test_categorical = train_test_split(X, y_categorical, test_size=0.2, random_state=42)
 
 # Construire le modèle de classification
 model = Sequential()
 model.add(Dense(units=128, activation='relu', input_dim=5))
 model.add(Dropout(0.2))
 model.add(Dense(units=64, activation='relu'))
-model.add(Dense(units=33, activation='softmax'))  # 33 classes pour les numéros 1 à 50 de l'Euromillions
+model.add(Dense(units=33, activation='softmax'))
 
-model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
 # Entraîner le modèle
-model.fit(X_train, y_train, epochs=50, batch_size=32, validation_split=0.2)
+model.fit(X_train, y_train_categorical, epochs=50, batch_size=32, validation_split=0.2)
 
 # Évaluer le modèle sur l'ensemble de test
-loss, accuracy = model.evaluate(X_test, y_test)
+loss, accuracy = model.evaluate(X_test, y_test_categorical)
 print('Loss:', loss)
 print('Accuracy:', accuracy)
 
