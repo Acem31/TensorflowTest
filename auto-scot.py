@@ -52,7 +52,7 @@ print('Accuracy:', accuracy)
 last_five_numbers = numbers_normalized[-sequence_length:]
 last_five_numbers = last_five_numbers.reshape(1, sequence_length, 5)
 next_number_probabilities = model.predict(last_five_numbers)
-predicted_number = np.argmax(next_number_probabilities)
+predicted_numbers = np.random.choice(range(1, 51), size=5, p=next_number_probabilities[0][-1])
 
+print("Numéros prédits :", predicted_numbers)
 print("Probabilités pour les prochains numéros :", next_number_probabilities)
-print("Numéro prédit :", predicted_number)
