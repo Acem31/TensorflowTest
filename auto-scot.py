@@ -17,9 +17,10 @@ numbers_normalized = scaler.fit_transform(numbers)
 
 # Préparer les données pour l'apprentissage
 X, y = [], []
-for i in range(len(numbers_normalized) - 6):  # Utilisez les 6 derniers tirages pour la prédiction du prochain
-    X.append(numbers_normalized[i:i+5])
-    y.append(np.argmax(numbers_normalized[i+5]))
+sequence_length = 5  # Longueur de la séquence
+for i in range(len(numbers_normalized) - sequence_length - 1):
+    X.append(numbers_normalized[i:i+sequence_length])
+    y.append(numbers_normalized[i+sequence_length])
 
 X = np.array(X)
 y = np.array(y)
@@ -48,8 +49,8 @@ print('Loss:', loss)
 print('Accuracy:', accuracy)
 
 # Utiliser le modèle pour la prédiction
-last_five_numbers = numbers_normalized[-5:]
-last_five_numbers = last_five_numbers.reshape(1, 5)
+last_five_numbers = numbers_normalized[-sequence_length:]
+last_five_numbers = last_five_numbers.reshape(1, sequence_length, 5)
 next_number_probabilities = model.predict(last_five_numbers)
 predicted_number = np.argmax(next_number_probabilities)
 
