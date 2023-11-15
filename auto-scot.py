@@ -34,15 +34,9 @@ X_test = scaler.transform(X_test)
 model = XGBRegressor(objective ='reg:squarederror')
 model.fit(X_train, y_train)
 
-# Faire des prédictions sur l'ensemble de test
-y_pred = model.predict(X_test)
-
-# Calculer l'erreur quadratique moyenne (MSE)
-mse = mean_squared_error(y_test, y_pred)
-print(f'Mean Squared Error: {mse}')
-
 # Seuil de distance pour continuer l'apprentissage
 seuil_distance = 5.0
+score_acceptable = 10.0  # Choisir un score acceptable en fonction de votre application
 
 while True:
     last_five_numbers = np.array(data[-1]).reshape(1, -1)
@@ -57,7 +51,10 @@ while True:
     print("Dernière ligne du CSV :", data[-1])
     print("Distance euclidienne avec la dernière ligne du CSV :", distance)
 
-    if distance < seuil_distance:
+    if distance < seuil_distance or mean_squared_error([rounded_predictions], [data[-1]]) < score_acceptable:
         break
+
+    # Ré-entraîner le modèle avec les nouvelles données
+    model.fit(X_train, y_train)
 
 print("Le modèle a atteint un résultat satisfaisant.")
