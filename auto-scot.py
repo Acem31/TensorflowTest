@@ -52,7 +52,7 @@ seuil_distance = 5.0
 
 while True:
     last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
-    last_five_numbers = scaler.transform(last_five_numbers)  # Normaliser les données
+    last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
     next_numbers_prediction = model.predict(last_five_numbers)
     rounded_predictions = np.round(next_numbers_prediction)
 
