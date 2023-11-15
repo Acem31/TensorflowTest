@@ -5,7 +5,9 @@ from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import GRU, Dense
 from tensorflow.keras.optimizers import Adam
-from sklearn.metrics import mean_squared_error
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow import keras
+from kerastuner.tuners import RandomSearch
 
 # Charger les données depuis le fichier CSV
 data = []
@@ -36,16 +38,34 @@ X_test = scaler.transform(X_test)
 X_train = X_train.reshape(X_train.shape[0], 1, X_train.shape[1])  # Ajoute une dimension temporelle
 X_test = X_test.reshape(X_test.shape[0], 1, X_test.shape[1])
 
-# Créer le modèle GRU
-model = Sequential()
-model.add(GRU(64, input_shape=(1, 5), activation='relu'))
-model.add(Dense(5))  # Le nombre de neurones de sortie doit être égal à la dimension de la sortie
+# Fonction pour construire le modèle
+def build_model(hp):
+    model = Sequential()
+    model.add(GRU(units=hp.Int('units', min_value=32, max_value=128, step=32), input_shape=(1, 5), activation='relu'))
+    model.add(Dense(5))
+    model.compile(loss='mean_squared_error', optimizer=Adam(learning_rate=hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])))
+    return model
 
-# Compiler le modèle
-model.compile(loss='mean_squared_error', optimizer=Adam(lr=0.001))
+# Initialiser le tuner
+tuner = RandomSearch(
+    build_model,
+    objective='val_loss',
+    max_trials=5,  # Nombre total de modèles à essayer
+    directory='tuner_dir',  # Répertoire pour enregistrer les résultats du tuner
+    project_name='euromillions_tuning'  # Nom du projet tuner
+)
 
-# Entraîner le modèle
-model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_test, y_test), verbose=2)
+# Rechercher les meilleurs paramètres
+tuner.search(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_test, y_test), callbacks=[EarlyStopping(patience=5)])
+
+# Obtenir les meilleurs paramètres
+best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
+
+# Construire le modèle avec les meilleurs paramètres
+best_model = tuner.hypermodel.build(best_hps)
+
+# Entraîner le meilleur modèle
+best_model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test))
 
 # Normaliser les données pour la prédiction
 last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
@@ -56,7 +76,7 @@ seuil_distance = 5.0
 
 while True:
     # Prédiction avec le modèle
-    next_numbers_prediction = model.predict(last_five_numbers.reshape(1, 1, -1))
+    next_numbers_prediction = best_model.predict(last_five_numbers.reshape(1, 1, -1))
     rounded_predictions = np.round(next_numbers_prediction)
 
     # Calcul de la distance euclidienne entre la prédiction et la dernière ligne du CSV
@@ -70,7 +90,7 @@ while True:
         break
 
     # Ré-entraîner le modèle avec les nouvelles données
-    model.fit(X_train, y_train, epochs=10, batch_size=32, verbose=2)
+    best_model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=2)
 
     # Préparer les nouvelles données pour la prédiction
     last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
