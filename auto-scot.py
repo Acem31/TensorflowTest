@@ -50,7 +50,7 @@ while True:
     print("Dernière ligne du CSV :", data[-1])
     print("Distance euclidienne avec la dernière ligne du CSV :", distance)
 
-    if distance < seuil_distance
+    if distance < seuil_distance:
         break
 
     # Ré-entraîner le modèle avec les nouvelles données
