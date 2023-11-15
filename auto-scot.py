@@ -47,13 +47,16 @@ model.compile(loss='mean_squared_error', optimizer=Adam(lr=0.001))
 # Entraîner le modèle
 model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_test, y_test), verbose=2)
 
+# Normaliser les données pour la prédiction
+last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
+last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
+
 # Seuil de distance pour continuer l'apprentissage
 seuil_distance = 5.0
 
 while True:
-    last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
-    last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
-    next_numbers_prediction = model.predict(last_five_numbers)
+    # Prédiction avec le modèle
+    next_numbers_prediction = model.predict(last_five_numbers.reshape(1, 1, -1))
     rounded_predictions = np.round(next_numbers_prediction)
 
     # Calcul de la distance euclidienne entre la prédiction et la dernière ligne du CSV
@@ -68,5 +71,9 @@ while True:
 
     # Ré-entraîner le modèle avec les nouvelles données
     model.fit(X_train, y_train, epochs=10, batch_size=32, verbose=2)
+
+    # Préparer les nouvelles données pour la prédiction
+    last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
+    last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
 
 print("Le modèle a atteint un résultat satisfaisant.")
