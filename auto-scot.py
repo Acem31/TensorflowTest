@@ -36,7 +36,6 @@ model.fit(X_train, y_train)
 
 # Seuil de distance pour continuer l'apprentissage
 seuil_distance = 5.0
-score_acceptable = 10.0  # Choisir un score acceptable en fonction de votre application
 
 while True:
     last_five_numbers = np.array(data[-1]).reshape(1, -1)
@@ -51,7 +50,7 @@ while True:
     print("Dernière ligne du CSV :", data[-1])
     print("Distance euclidienne avec la dernière ligne du CSV :", distance)
 
-    if distance < seuil_distance or mean_squared_error([rounded_predictions], [data[-1]]) < score_acceptable:
+    if distance < seuil_distance
         break
 
     # Ré-entraîner le modèle avec les nouvelles données
