@@ -118,6 +118,13 @@ while distance > seuil_distance:
         last_five_numbers = np.array(all_data[-1]).reshape(1, 1, -1)
         last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
 
+    # Ré-entraîner le modèle avec les nouvelles données
+    best_model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=2)
+
+    # Préparer les nouvelles données pour la prédiction
+    last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
+    last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
+
 # Une dernière prédiction après la fin de la boucle
 final_prediction = best_model.predict(last_five_numbers.reshape(1, 1, -1))
 final_rounded_prediction = np.round(final_prediction)
