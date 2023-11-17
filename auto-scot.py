@@ -122,7 +122,7 @@ best_model.fit(X, y, epochs=100, batch_size=32, verbose=2)
 
 # Préparer les données pour la prédiction avec le modèle final
 last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
-last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
+last_five_numbers = scaler.transform(last_five_numbers)
 
 # Faire une prédiction avec le modèle final
 final_prediction = best_model.predict(last_five_numbers.reshape(1, 1, -1))
