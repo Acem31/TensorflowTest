@@ -73,8 +73,9 @@ last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for
 
 # Seuil de distance pour continuer l'apprentissage
 seuil_distance = 10.0
+distance = 15
 
-while True:
+while distance > seuil_distance:
     # Prédiction avec le modèle
     next_numbers_prediction = best_model.predict(last_five_numbers.reshape(1, 1, -1))
     rounded_predictions = np.round(next_numbers_prediction)
@@ -117,7 +118,8 @@ while True:
         last_five_numbers = np.array(all_data[-1]).reshape(1, 1, -1)
         last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
 
-    else:
-        break
+# Une dernière prédiction après la fin de la boucle
+final_prediction = best_model.predict(last_five_numbers.reshape(1, 1, -1))
+final_rounded_prediction = np.round(final_prediction)
 
-print("Le modèle a atteint un résultat satisfaisant.")
+print("Dernière prédiction pour les 5 prochains numéros :", final_rounded_prediction)
