@@ -77,6 +77,9 @@ previous_distance = float('inf')
 # Initialiser une variable pour compter le nombre d'itérations consécutives où la distance augmente
 consecutive_increases = 0
 
+# Seuil de distance pour continuer l'apprentissage
+seuil_distance = 5.0
+
 while True:
     # Prédiction avec le modèle
     next_numbers_prediction = best_model.predict(last_five_numbers.reshape(1, 1, -1))
