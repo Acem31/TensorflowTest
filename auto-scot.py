@@ -71,8 +71,11 @@ best_model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_t
 last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
 last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
 
-# Seuil de distance pour continuer l'apprentissage
-seuil_distance = 5.0
+# Initialiser une variable pour suivre la distance précédente
+previous_distance = float('inf')
+
+# Initialiser une variable pour compter le nombre d'itérations consécutives où la distance augmente
+consecutive_increases = 0
 
 while True:
     # Prédiction avec le modèle
@@ -87,6 +90,18 @@ while True:
     print("Distance euclidienne avec la dernière ligne du CSV :", distance)
 
     if distance < seuil_distance:
+        # Si la distance est inférieure au seuil, réinitialiser le compteur
+        consecutive_increases = 0
+    elif distance > previous_distance:
+        # Si la distance augmente, incrémenter le compteur
+        consecutive_increases += 1
+    else:
+        # Sinon, réinitialiser le compteur
+        consecutive_increases = 0
+
+    if consecutive_increases >= 3:
+        # Si la distance augmente pendant trois itérations consécutives, arrêter la boucle
+        print("La distance a augmenté pendant trois itérations consécutives. Arrêt de l'apprentissage.")
         break
 
     # Ré-entraîner le modèle avec les nouvelles données
@@ -96,4 +111,18 @@ while True:
     last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
     last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
 
-print("Le modèle a atteint un résultat satisfaisant.")
+    # Mettre à jour la distance précédente
+    previous_distance = distance
+    
+# Entraîner le meilleur modèle sur l'intégralité du CSV
+best_model.fit(X, y, epochs=100, batch_size=32, verbose=2)
+
+# Préparer les données pour la prédiction avec le modèle final
+last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
+last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
+
+# Faire une prédiction avec le modèle final
+final_prediction = best_model.predict(last_five_numbers.reshape(1, 1, -1))
+rounded_final_prediction = np.round(final_prediction)
+
+print("Prédiction finale pour les 5 prochains numéros :", rounded_final_prediction)
