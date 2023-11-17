@@ -72,7 +72,7 @@ last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
 last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
 
 # Seuil de distance pour continuer l'apprentissage
-seuil_distance = 5.0
+seuil_distance = 10.0
 
 while True:
     # Prédiction avec le modèle
@@ -87,13 +87,37 @@ while True:
     print("Distance euclidienne avec la dernière ligne du CSV :", distance)
 
     if distance < seuil_distance:
+        # Charger toutes les données du fichier CSV
+        all_data = []
+        with open('euromillions.csv', 'r') as file:
+            reader = csv.reader(file, delimiter=';')
+            for row in reader:
+                numbers = list(map(int, row[:5]))
+                all_data.append(numbers)
+
+        # Ajouter les nouvelles données au jeu de données existant
+        X_extended = np.concatenate((X, np.array(all_data[:-1])))
+        y_extended = np.concatenate((y, np.array(all_data[1:])))
+
+        # Diviser les données étendues en ensembles d'entraînement et de test
+        X_train, X_test, y_train, y_test = train_test_split(X_extended, y_extended, test_size=0.2, random_state=42)
+
+        # Normaliser les données
+        X_train = scaler.fit_transform(X_train)
+        X_test = scaler.transform(X_test)
+
+        # Réorganiser les données pour qu'elles soient compatibles avec un modèle RNN
+        X_train = X_train.reshape(X_train.shape[0], 1, X_train.shape[1])
+        X_test = X_test.reshape(X_test.shape[0], 1, X_test.shape[1])
+
+        # Réentraîner le modèle avec les données étendues
+        best_model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test))
+
+        # Réinitialiser le processus de prédiction avec la dernière ligne du CSV
+        last_five_numbers = np.array(all_data[-1]).reshape(1, 1, -1)
+        last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
+
+    else:
         break
-
-    # Ré-entraîner le modèle avec les nouvelles données
-    best_model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=2)
-
-    # Préparer les nouvelles données pour la prédiction
-    last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
-    last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
 
 print("Le modèle a atteint un résultat satisfaisant.")
