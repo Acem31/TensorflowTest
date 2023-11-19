@@ -75,6 +75,9 @@ last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for
 seuil_distance = 10.0
 distance = 15
 
+# Initialiser la perte à une valeur arbitrairement élevée pour entrer dans la boucle
+loss = float('inf')
+
 while distance > seuil_distance:
     # Prédiction avec le modèle
     next_numbers_prediction = best_model.predict(last_five_numbers.reshape(1, 1, -1))
@@ -87,12 +90,15 @@ while distance > seuil_distance:
     print("Dernière ligne du CSV :", data[-1])
     print("Distance euclidienne avec la dernière ligne du CSV :", distance)
 
-    # Ré-entraîner le modèle avec les nouvelles données
-    best_model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=2)
+    # Ré-entraîner le modèle avec les nouvelles données et récupérer l'historique d'entraînement
+    history = best_model.fit(X_train, y_train, epochs=100, batch_size=32, verbose=2, validation_data=(X_test, y_test))
 
     # Préparer les nouvelles données pour la prédiction
     last_five_numbers = np.array(data[-1]).reshape(1, 1, -1)
     last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
+
+    # Récupérer la valeur de perte à partir de l'historique d'entraînement
+    loss = history.history['loss'][-1]
 
 # Maintenant, après la fin de la boucle basée sur la distance, nous exécutons la boucle basée sur la perte
 
@@ -122,15 +128,15 @@ while loss > 40:
     X_train = X_train.reshape(X_train.shape[0], 1, X_train.shape[1])
     X_test = X_test.reshape(X_test.shape[0], 1, X_test.shape[1])
 
-    # Réentraîner le modèle avec les données étendues
-    best_model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test))
+    # Réentraîner le modèle avec les données étendues et récupérer l'historique d'entraînement
+    history = best_model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test))
 
     # Réinitialiser le processus de prédiction avec la dernière ligne du CSV
     last_five_numbers = np.array(all_data[-1]).reshape(1, 1, -1)
     last_five_numbers = np.squeeze([scaler.transform(last_five_numbers[:, i, :]) for i in range(last_five_numbers.shape[1])])
 
-    # Calculer la perte sur l'ensemble de test
-    loss = best_model.evaluate(X_test, y_test)
+    # Récupérer la valeur de perte à partir de l'historique d'entraînement
+    loss = history.history['loss'][-1]
 
 # Une dernière prédiction après la fin de la boucle
 final_prediction = best_model.predict(last_five_numbers.reshape(1, 1, -1))
