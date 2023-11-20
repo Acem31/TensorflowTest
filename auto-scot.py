@@ -1,6 +1,6 @@
 import pandas as pd
-from mlxtend.frequent_patterns import apriori, association_rules
-import csv
+from itertools import combinations
+from mlxtend.frequent_patterns import association_rules
 
 # Charger les données depuis le fichier CSV
 data = []
@@ -16,8 +16,17 @@ df = pd.DataFrame(data, columns=['Num1', 'Num2', 'Num3', 'Num4', 'Num5'])
 # Binariser les données pour l'algorithme Apriori
 df_binarized = pd.get_dummies(df, columns=['Num1', 'Num2', 'Num3', 'Num4', 'Num5'])
 
+# Générer toutes les combinaisons possibles de 5 numéros
+all_combinations = list(combinations(df_binarized.columns, 5))
+
+# Filtrer les combinaisons qui ont un support suffisant
+frequent_combinations = [combo for combo in all_combinations if df_binarized[list(combo)].all(axis=1).mean() > 0.05]
+
+# Convertir les combinaisons en un DataFrame
+df_frequent_combinations = pd.DataFrame(frequent_combinations, columns=['Num1', 'Num2', 'Num3', 'Num4', 'Num5'])
+
 # Utiliser l'algorithme Apriori pour trouver des motifs fréquents
-frequent_itemsets = apriori(df_binarized, min_support=0.1, use_colnames=True)
+frequent_itemsets = apriori(df_binarized[list(df_frequent_combinations.columns)], min_support=0.05, use_colnames=True)
 
 # Afficher les règles d'association
 rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
