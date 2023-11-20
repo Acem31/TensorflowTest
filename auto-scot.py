@@ -39,20 +39,36 @@ X_train = X_train.reshape(X_train.shape[0], 1, X_train.shape[1])  # Ajoute une d
 X_test = X_test.reshape(X_test.shape[0], 1, X_test.shape[1])
 
 # Fonction pour construire le modèle
-def build_model(hp):
+def build_complex_model(hp):
     model = Sequential()
-    model.add(GRU(units=hp.Int('units', min_value=32, max_value=128, step=32), input_shape=(1, 5), activation='relu'))
-    model.add(Dense(5))
-    model.compile(loss='mean_squared_error', optimizer=Adam(learning_rate=hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])))
+
+    # Première couche GRU avec ajustement du nombre d'unités
+    model.add(GRU(units=hp.Int('units_1', min_value=32, max_value=128, step=32),
+                  input_shape=(1, 5),
+                  activation=hp.Choice('activation_1', values=['relu', 'tanh', 'sigmoid'])))
+
+    # Ajouter des couches GRU supplémentaires (ajuster le nombre d'unités et les fonctions d'activation)
+    for i in range(hp.Int('num_layers', min_value=1, max_value=3)):
+        model.add(GRU(units=hp.Int(f'units_{i+2}', min_value=32, max_value=128, step=32),
+                      activation=hp.Choice(f'activation_{i+2}', values=['relu', 'tanh', 'sigmoid']),
+                      return_sequences=True))  # Retourne des séquences pour les couches intermédiaires
+
+    # Couche Dense finale avec ajustement du nombre d'unités
+    model.add(Dense(5, activation=hp.Choice('dense_activation', values=['relu', 'tanh', 'sigmoid'])))
+
+    # Compilation du modèle avec l'optimiseur et le taux d'apprentissage choisis
+    model.compile(loss='mean_squared_error',
+                  optimizer=Adam(learning_rate=hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])))
+
     return model
 
 # Initialiser le tuner
 tuner = RandomSearch(
-    build_model,
+    build_complex_model,
     objective='val_loss',
-    max_trials=5,  # Nombre total de modèles à essayer
-    directory='tuner_dir',  # Répertoire pour enregistrer les résultats du tuner
-    project_name='euromillions_tuning'  # Nom du projet tuner
+    max_trials=5,
+    directory='tuner_dir',
+    project_name='euromillions_tuning'
 )
 
 # Rechercher les meilleurs paramètres
