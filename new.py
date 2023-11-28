@@ -1,10 +1,9 @@
 import pandas as pd
-from sklearn.linear_model import SGDRegressor
 from sklearn.preprocessing import StandardScaler
-import numpy as np
+from sklearn.neural_network import MLPRegressor
 
 # Charger le fichier CSV avec un délimiteur spécifique pour les nombres et le point-virgule
-df = pd.read_csv('euromillions.csv', delimiter='[;|\n]')
+df = pd.read_csv('euromillions.csv', delimiter='[;|\n]', engine='python')
 
 # Supprimer les lignes avec des valeurs manquantes
 df.dropna(inplace=True)
@@ -13,18 +12,22 @@ df.dropna(inplace=True)
 X = df.iloc[:, :-1]
 y = df.iloc[:, -1]
 
-# Initialiser le modèle de régression linéaire avec descente de gradient stochastique (SGD)
-model = SGDRegressor()
+# Initialiser le modèle de régression neuronal (MLP)
+model = MLPRegressor(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42)
 
 # Initialiser un scaler pour normaliser les données
 scaler = StandardScaler()
 
-# Parcourir chaque ligne du CSV pour l'apprentissage incrémentiel
-for index in range(1, len(df)):
-    # Données d'entrée
-    X_train = X.iloc[:index, :]
+# Liste pour stocker les tirages précédents
+previous_draws = []
 
-    # Donnée de sortie
+# Parcourir chaque ligne du CSV pour l'apprentissage incrémentiel
+for index in range(len(df)):
+    # Ajouter le tirage actuel à la liste des tirages précédents
+    previous_draws.append(X.iloc[index, :].values)
+
+    # Utiliser les tirages précédents pour l'apprentissage
+    X_train = previous_draws[:-1]
     y_train = y.iloc[:index]
 
     # Normaliser les données
@@ -34,7 +37,7 @@ for index in range(1, len(df)):
     model.partial_fit(X_train_scaled, y_train)
 
 # Sélectionner la dernière ligne du CSV pour la prédiction future
-future_data = X.iloc[[-1], :]
+future_data = [X.iloc[-1, :].values]
 
 # Normaliser les données pour la prédiction
 future_data_scaled = scaler.transform(future_data)
