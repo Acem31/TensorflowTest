@@ -1,48 +1,56 @@
 import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.neural_network import MLPRegressor
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
 
-# Charger le fichier CSV avec un délimiteur spécifique pour les nombres et le point-virgule
-df = pd.read_csv('euromillions.csv', delimiter='[;|\n]', engine='python')
+# Charger les données
+data = pd.read_csv('euromillions.csv', sep=';', header=None)
 
-# Supprimer les lignes avec des valeurs manquantes
-df.dropna(inplace=True)
+# Prétraitement des données
+main_numbers = data.iloc[:, 0:6]
+bonus_numbers = data.iloc[:, 6:8]
+sequences = pd.concat([main_numbers, bonus_numbers], axis=1)
 
-# Diviser les données en caractéristiques d'entrée (X) et de sortie (y)
-X = df.iloc[:, :-1]
-y = df.iloc[:, -1]
-
-# Initialiser le modèle de régression neuronal (MLP)
-model = MLPRegressor(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42)
-
-# Initialiser un scaler pour normaliser les données
+# Normaliser les données
 scaler = StandardScaler()
+sequences = scaler.fit_transform(sequences)
 
-# Liste pour stocker les tirages précédents
-previous_draws = []
+# Préparer les données pour l'apprentissage
+X, y = [], []
+sequence_length = 10
 
-# Parcourir chaque ligne du CSV pour l'apprentissage incrémentiel
-for index in range(len(df)):
-    # Ajouter le tirage actuel à la liste des tirages précédents
-    previous_draws.append(X.iloc[index, :].values)
+for i in range(len(sequences) - sequence_length):
+    X.append(sequences[i:i+sequence_length])
+    y.append(sequences[i+sequence_length])
 
-    if len(previous_draws) > 1:  # Vérifier si la liste n'est pas vide
-        # Utiliser les tirages précédents pour l'apprentissage
-        X_train = previous_draws[:-1]
-        y_train = y.iloc[:index]
+X = np.array(X)
+y = np.array(y)
 
-        # Normaliser les données
-        X_train_scaled = scaler.fit_transform(X_train)
+# Diviser les données en ensemble d'entraînement et ensemble de test
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Mettre à jour le modèle avec la nouvelle ligne
-        model.partial_fit(X_train_scaled, y_train)
+# Construire le modèle LSTM
+model = Sequential()
+model.add(LSTM(50, activation='relu', input_shape=(sequence_length, X.shape[2])))
+model.add(Dense(32, activation='relu'))  # Ajustez le nombre de neurones et la fonction d'activation
+model.add(Dense(X.shape[2]))  # Assurez-vous que le nombre de neurones correspond à votre sortie
+model.compile(optimizer='adam', loss='mse')
 
-# Sélectionner la dernière ligne du CSV pour la prédiction future
-future_data = [X.iloc[-1, :].values]
+# Entraîner le modèle
+model.fit(X_train, y_train, epochs=50, batch_size=32, validation_data=(X_test, y_test))
 
-# Normaliser les données pour la prédiction
-future_data_scaled = scaler.transform(future_data)
+# Évaluer le modèle sur l'ensemble de test (facultatif)
+loss = model.evaluate(X_test, y_test)
+print(f"Loss on test set: {loss}")
 
-# Faire la prédiction pour la future ligne
-future_prediction = model.predict(future_data_scaled)
-print(f'Prédiction pour la future ligne : {future_prediction}')
+# Faire une prédiction pour le prochain tirage
+last_sequence = sequences[-sequence_length:].reshape(1, sequence_length, X.shape[2])
+predicted_numbers = model.predict(last_sequence)
+
+# Inverser la normalisation pour obtenir les numéros prédits
+predicted_numbers = scaler.inverse_transform(predicted_numbers)
+
+print("Numéros prédits pour le prochain tirage:")
+print(predicted_numbers)
