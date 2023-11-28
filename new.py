@@ -32,19 +32,19 @@ y = np.array(y)
 # Diviser les données en ensemble d'entraînement et ensemble de test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Fonction pour construire le modèle
 def build_hyper_model(hp):
     model = Sequential()
     model.add(LSTM(hp.Int('units', min_value=10, max_value=100, step=1), activation='relu', input_shape=(sequence_length, X.shape[2])))
     model.add(Dense(hp.Int('dense_units', min_value=10, max_value=100, step=1), activation='relu'))
     model.add(Dense(X.shape[2]))
-    
+
     # Inclure l'optimizer comme hyperparamètre
     optimizer_choice = hp.Choice('optimizer', values=['adam', 'sgd', 'rmsprop'])
     
-    if optimizer_choice == 'adam':
-        optimizer = 'adam'
-    elif optimizer_choice == 'sgd':
+    # Initialiser optimizer avec une valeur par défaut (par exemple, 'adam')
+    optimizer = 'adam'
+
+    if optimizer_choice == 'sgd':
         optimizer = 'sgd'
     elif optimizer_choice == 'rmsprop':
         optimizer = 'rmsprop'
