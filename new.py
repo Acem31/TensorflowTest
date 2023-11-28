@@ -26,15 +26,16 @@ for index in range(len(df)):
     # Ajouter le tirage actuel à la liste des tirages précédents
     previous_draws.append(X.iloc[index, :].values)
 
-    # Utiliser les tirages précédents pour l'apprentissage
-    X_train = previous_draws[:-1]
-    y_train = y.iloc[:index]
+    if len(previous_draws) > 1:  # Vérifier si la liste n'est pas vide
+        # Utiliser les tirages précédents pour l'apprentissage
+        X_train = previous_draws[:-1]
+        y_train = y.iloc[:index]
 
-    # Normaliser les données
-    X_train_scaled = scaler.fit_transform(X_train)
+        # Normaliser les données
+        X_train_scaled = scaler.fit_transform(X_train)
 
-    # Mettre à jour le modèle avec la nouvelle ligne
-    model.partial_fit(X_train_scaled, y_train)
+        # Mettre à jour le modèle avec la nouvelle ligne
+        model.partial_fit(X_train_scaled, y_train)
 
 # Sélectionner la dernière ligne du CSV pour la prédiction future
 future_data = [X.iloc[-1, :].values]
