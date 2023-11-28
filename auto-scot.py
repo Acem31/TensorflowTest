@@ -1,47 +1,33 @@
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklearn.neural_network import MLPRegressor
+from itertools import combinations
+from mlxtend.frequent_patterns import association_rules
 
-# Charger le fichier CSV avec un délimiteur spécifique pour les nombres et le point-virgule
-df = pd.read_csv('euromillions.csv', delimiter='[;|\n]', engine='python')
+# Charger les données depuis le fichier CSV
+data = []
+with open('euromillions.csv', 'r') as file:
+    reader = csv.reader(file, delimiter=';')
+    for row in reader:
+        numbers = list(map(int, row[:5]))
+        data.append(numbers)
 
-# Supprimer les lignes avec des valeurs manquantes
-df.dropna(inplace=True)
+# Créer un DataFrame pandas
+df = pd.DataFrame(data, columns=['Num1', 'Num2', 'Num3', 'Num4', 'Num5'])
 
-# Diviser les données en caractéristiques d'entrée (X) et de sortie (y)
-X = df.iloc[:, :-1]
-y = df.iloc[:, -1]
+# Binariser les données pour l'algorithme Apriori
+df_binarized = pd.get_dummies(df, columns=['Num1', 'Num2', 'Num3', 'Num4', 'Num5'])
 
-# Initialiser le modèle de régression neuronal (MLP)
-model = MLPRegressor(hidden_layer_sizes=(100, 50), max_iter=1000, random_state=42)
+# Générer toutes les combinaisons possibles de 5 numéros
+all_combinations = list(combinations(df_binarized.columns, 5))
 
-# Initialiser un scaler pour normaliser les données
-scaler = StandardScaler()
+# Filtrer les combinaisons qui ont un support suffisant
+frequent_combinations = [combo for combo in all_combinations if df_binarized[list(combo)].all(axis=1).mean() > 0.05]
 
-# Liste pour stocker les tirages précédents
-previous_draws = []
+# Convertir les combinaisons en un DataFrame
+df_frequent_combinations = pd.DataFrame(frequent_combinations, columns=['Num1', 'Num2', 'Num3', 'Num4', 'Num5'])
 
-# Parcourir chaque ligne du CSV pour l'apprentissage incrémentie
-for index in range(len(df)):
-    # Ajouter le tirage actuel à la liste des tirages précédents
-    previous_draws.append(X.iloc[index, :].values)
+# Utiliser l'algorithme Apriori pour trouver des motifs fréquents
+frequent_itemsets = apriori(df_binarized[list(df_frequent_combinations.columns)], min_support=0.05, use_colnames=True)
 
-    # Utiliser les tirages précédents pour l'apprentissage
-    X_train = previous_draws[:-1]
-    y_train = y.iloc[:index]
-
-    # Normaliser les données
-    X_train_scaled = scaler.fit_transform(X_train)
-
-    # Mettre à jour le modèle avec la nouvelle ligne
-    model.partial_fit(X_train_scaled, y_train)
-
-# Sélectionner la dernière ligne du CSV pour la prédiction future
-future_data = [X.iloc[-1, :].values]
-
-# Normaliser les données pour la prédiction
-future_data_scaled = scaler.transform(future_data)
-
-# Faire la prédiction pour la future ligne
-future_prediction = model.predict(future_data_scaled)
-print(f'Prédiction pour la future ligne : {future_prediction}')
+# Afficher les règles d'association
+rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
+print(rules)
