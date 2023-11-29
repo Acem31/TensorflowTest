@@ -1,102 +1,114 @@
-import csv
+import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from keras.models import Sequential
-from keras.layers import LSTM, Dense
-from keras.optimizers import Adam
-from keras.layers import Activation
-from kerastuner.tuners import RandomSearch
-from keras.callbacks import EarlyStopping
-from keras.layers import Dropout
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import LSTM, Dense, Input, Concatenate
 from kerastuner.tuners import BayesianOptimization
-from keras.optimizers import Adam, RMSprop, SGD, Nadam, Adagrad
-from kerastuner.engine.hyperparameters import HyperParameters
+from mlxtend.frequent_patterns import apriori
+from mlxtend.preprocessing import TransactionEncoder
 
-# Charger les données depuis le fichier CSV
-data = []
-	@@ -29,79 +22,33 @@
+# Charger les données
+data = pd.read_csv('euromillions.csv', sep=';', header=None)
+
+# Prétraitement des données
+main_numbers = data.iloc[:, 0:6]
+bonus_numbers = data.iloc[:, 6:8]
+sequences = pd.concat([main_numbers, bonus_numbers], axis=1)
+
+# Normaliser les données
+scaler = StandardScaler()
+sequences = scaler.fit_transform(sequences)
+
+# Préparer les données pour l'apprentissage
+X, y = [], []
+sequence_length = 10
+
+for i in range(len(sequences) - sequence_length):
+    X.append(sequences[i:i+sequence_length])
+    y.append(sequences[i+sequence_length])
+
 X = np.array(X)
 y = np.array(y)
 
-# Remodeler les données d'entraînement pour être en 3D
-X = X.reshape(X.shape[0], X.shape[1], 1)
-y = y.reshape(y.shape[0], y.shape[1], 1)
-
+# Diviser les données en ensemble d'entraînement et ensemble de test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-def build_hyper_model(hp):
-    model = Sequential()
-    model.add(LSTM(units=hp.Int('units_1', min_value=20, max_value=200, step=1), input_shape=(5, 1), return_sequences=True))
-    dropout_rate_1 = hp.Float('dropout_rate_1', min_value=0.0, max_value=0.5, step=0.1)
-    model.add(Dropout(rate=dropout_rate_1))  # Couche de régularisation
-    model.add(LSTM(units=hp.Int('units_2', min_value=20, max_value=200, step=1), return_sequences=True))
-    dropout_rate_2 = hp.Float('dropout_rate_2', min_value=0.0, max_value=0.5, step=0.1)
-    model.add(Dropout(rate=dropout_rate_2))  # Couche de régularisation
-    model.add(LSTM(units=hp.Int('units_3', min_value=20, max_value=200, step=1), return_sequences=True))
-    dropout_rate_3 = hp.Float('dropout_rate_3', min_value=0.0, max_value=0.5, step=0.1)
-    model.add(Dropout(rate=dropout_rate_3))
-    model.add(Dense(1))
-    model.add(Activation(hp.Choice('activation', values=['linear', 'tanh', 'relu', 'sigmoid', 'LeakyReLU', 'elu', 'softmax', 'swish', 'gelu', 'selu'])))
-    # Ajoutez une nouvelle dimension pour l'optimiseur
-    optimizer_choice = hp.Choice('optimizer', values=['adam', 'rmsprop', 'sgd', 'nadam', 'adagrad'])
+# Utiliser mlxtend pour extraire les motifs fréquents
+te = TransactionEncoder()
+te_ary = te.fit(X.flatten()).transform(X.flatten())
+df = pd.DataFrame(te_ary, columns=te.columns_)
 
-    if optimizer_choice == 'adam':
-        optimizer = Adam(learning_rate=hp.Float('adam_learning_rate', min_value=0.0001, max_value=2, sampling='log'))
+frequent_itemsets = apriori(df, min_support=0.05, use_colnames=True)
+
+# Ajouter des caractéristiques basées sur les motifs fréquents
+pattern_features = frequent_itemsets.values[:, 1:]  # Utiliser les motifs fréquents comme caractéristiques
+X_with_patterns = np.concatenate((X, pattern_features[:, np.newaxis, :]), axis=2)
+
+def build_hyper_model(hp):
+    lstm_model = Sequential()
+    lstm_model.add(LSTM(hp.Int('units', min_value=10, max_value=100, step=1), activation='relu', input_shape=(sequence_length, X.shape[2])))
+    lstm_model.add(Dense(hp.Int('dense_units', min_value=10, max_value=100, step=1), activation='relu'))
+
+    # Inclure l'optimizer comme hyperparamètre
+    optimizer_choice = hp.Choice('optimizer', values=['adam', 'sgd', 'rmsprop'])
+    
+    # Initialiser optimizer avec une valeur par défaut (par exemple, 'adam')
+    optimizer = 'adam'
+
+    if optimizer_choice == 'sgd':
+        optimizer = 'sgd'
     elif optimizer_choice == 'rmsprop':
-        optimizer = RMSprop(learning_rate=hp.Float('rmsprop_learning_rate', min_value=0.0001, max_value=2, sampling='log'))
-    elif optimizer_choice == 'sgd':
-        optimizer = SGD(learning_rate=hp.Float('sgd_learning_rate', min_value=0.0001, max_value=2, sampling='log'))
-    elif optimizer_choice == 'nadam':
-        optimizer = Nadam(learning_rate=hp.Float('nadam_learning_rate', min_value=0.0001, max_value=2, sampling='log'))
-    elif optimizer_choice == 'adagrad':
-        optimizer = Adagrad(learning_rate=hp.Float('adagrad_learning_rate', min_value=0.0001, max_value=2, sampling='log'))
-    model.compile(loss='mean_squared_error', optimizer=optimizer)
+        optimizer = 'rmsprop'
+    
+    lstm_model.compile(optimizer=optimizer, loss='mse')
+
+    # Modèle basé sur les motifs fréquents
+    input_patterns = Input(shape=(5,))  # Adapter à votre nombre de motifs
+    dense_patterns = Dense(10, activation='relu')(input_patterns)
+    pattern_model = Model(inputs=input_patterns, outputs=dense_patterns)
+
+    # Concaténer les sorties des deux modèles
+    combined_model = Concatenate()([lstm_model.output, pattern_model.output])
+
+    # Ajouter une couche dense supplémentaire si nécessaire
+    combined_model = Dense(10, activation='relu')(combined_model)
+
+    # Couche de sortie
+    output_layer = Dense(X.shape[2])(combined_model)
+
+    model = Model(inputs=[lstm_model.input, input_patterns], outputs=output_layer)
+    model.compile(optimizer=optimizer, loss='mse')
+    
     return model
 
-#tuner = RandomSearch(
-#    build_hyper_model,
-#    objective='val_loss',
-#    max_trials=532,  # Nombre de modèles à essayer
-#    directory='my_dir',  # Répertoire pour enregistrer les résultats
-#    project_name='euromillions'
-#)
+# Initialiser le tuner BayesianOptimization
 tuner = BayesianOptimization(
     build_hyper_model,
     objective='val_loss',
-    num_initial_points=10,  # Nombre initial de points à évaluer de manière aléatoire
-    alpha=1e-4,  # Paramètre alpha pour la régularisation du modèle bayésien
-    beta=2.6,  # Paramètre beta pour la régularisation du modèle bayésien
-    max_trials=150  # Nombre total d'itérations (modèles à évaluer)
+    num_initial_points=10,
+    alpha=1e-4,
+    beta=2.6,
+    max_trials=100
 )
 
-# Divisez les données en ensembles d'entraînement et de validation
-X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
+# Rechercher les meilleurs hyperparamètres
+tuner.search([X_train, pattern_features[y_train.index]], y_train, epochs=100, batch_size=32, validation_data=([X_test, pattern_features[y_test.index]], y_test))
 
-tuner.search(X_train, y_train, epochs=200, validation_data=(X_val, y_val))
-early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min', restore_best_weights=True)
+# Récupérer le modèle avec les meilleurs hyperparamètres
+best_model = tuner.get_best_models(num_models=1)[0]
 
-# Obtenez les meilleurs hyperparamètres
-best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
+# Évaluer le modèle sur l'ensemble de test
+loss = best_model.evaluate([X_test, pattern_features[y_test.index]], y_test)
+print(f"Loss on test set: {loss}")
 
-# Créez un modèle avec les meilleurs hyperparamètres
-model = tuner.hypermodel.build(best_hps)
-model.fit(X_train, y_train, epochs=200, batch_size=1032, validation_data=(X_val, y_val), callbacks=[early_stopping])
+# Faire une prédiction pour le prochain tirage
+last_sequence = sequences[-sequence_length:].reshape(1, sequence_length, X.shape[2])
+last_pattern_features = np.random.rand(1, 5)  # Exemple aléatoire
+predicted_numbers = best_model.predict([last_sequence, last_pattern_features])
 
-tuner.results_summary()
+# Inverser la normalisation pour obtenir les numéros prédits
+predicted_numbers = scaler.inverse_transform(predicted_numbers)
 
-# Seuil de distance pour continuer l'apprentissage
-seuil_distance = 5.0
-
-while True:
-    last_five_numbers = np.array(data[-1]).reshape(1, 5)
-    next_numbers_prediction = model.predict(last_five_numbers)
-    rounded_predictions = np.round(next_numbers_prediction[0])
-
-    # Calcul de la distance euclidienne entre la prédiction et la dernière ligne du CSV
-    distance = np.linalg.norm(rounded_predictions - data[-1])
-    print("Prédiction pour les 5 prochains numéros :", rounded_predictions)
-    print("Dernière ligne du CSV :", data[-1])
-    print("Distance euclidienne avec la dernière ligne du CSV :", distance)
-    if distance < seuil_distance:
-        break
-print("Le modèle a atteint un résultat satisfaisant.")
+print("Numéros prédits pour le prochain tirage:")
+print(predicted_numbers)
