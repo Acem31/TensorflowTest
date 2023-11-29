@@ -31,3 +31,10 @@ frequent_itemsets = apriori(df_binarized[list(df_frequent_combinations.columns)]
 # Afficher les règles d'association
 rules = association_rules(frequent_itemsets, metric="lift", min_threshold=1)
 print(rules)
+
+# Fonction pour enregistrer les règles dans un fichier CSV
+def save_rules_to_csv(rules, file_path):
+    rules.to_csv(file_path, index=False)
+
+# Enregistrer les règles dans un fichier CSV
+save_rules_to_csv(rules, 'association_rules.csv')
