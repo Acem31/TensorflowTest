@@ -20,7 +20,7 @@ sequences = scaler.fit_transform(sequences)
 
 # Préparer les données pour l'apprentissage
 X, y = [], []
-sequence_length = 10
+sequence_length = tuner.Int('sequence_length', min_value=5, max_value=100, step=1)
 
 for i in range(len(sequences) - sequence_length):
     X.append(sequences[i:i+sequence_length])
