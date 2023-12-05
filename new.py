@@ -6,6 +6,7 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from kerastuner.tuners import BayesianOptimization
 from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.callbacks import EarlyStopping
 
 # Charger les données
 data = pd.read_csv('euromillions.csv', sep=';', header=None)
@@ -32,6 +33,8 @@ y = np.array(y)
 
 # Diviser les données en ensemble d'entraînement et ensemble de test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
 
 def build_hyper_model(hp):
     model = Sequential()
@@ -71,7 +74,7 @@ tuner = BayesianOptimization(
 )
 
 # Rechercher les meilleurs hyperparamètres
-tuner.search(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test))
+tuner.search(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test), callbacks=[early_stopping])
 
 # Récupérer le modèle avec les meilleurs hyperparamètres
 best_model = tuner.get_best_models(num_models=1)[0]
