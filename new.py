@@ -5,6 +5,7 @@ from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from kerastuner.tuners import BayesianOptimization
+from sklearn.preprocessing import MinMaxScaler
 
 # Charger les données
 data = pd.read_csv('euromillions.csv', sep=';', header=None)
@@ -15,12 +16,12 @@ bonus_numbers = data.iloc[:, 6:8]
 sequences = pd.concat([main_numbers, bonus_numbers], axis=1)
 
 # Normaliser les données
-scaler = StandardScaler()
+scaler = MinMaxScaler()
 sequences = scaler.fit_transform(sequences)
 
 # Préparer les données pour l'apprentissage
 X, y = [], []
-sequence_length = tuner.Int('sequence_length', min_value=5, max_value=100, step=1)
+sequence_length = 2
 
 for i in range(len(sequences) - sequence_length):
     X.append(sequences[i:i+sequence_length])
@@ -34,8 +35,15 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 def build_hyper_model(hp):
     model = Sequential()
-    model.add(LSTM(hp.Int('units', min_value=10, max_value=100, step=1), activation='relu', input_shape=(sequence_length, X.shape[2])))
-    model.add(Dense(hp.Int('dense_units', min_value=10, max_value=100, step=1), activation='relu'))
+    model.add(LSTM(
+        units=hp.Int('units', min_value=10, max_value=100, step=1),
+        activation=hp.Choice('lstm_activation', values=['relu', 'tanh', 'sigmoid']),
+        input_shape=(sequence_length, X.shape[2])
+    ))
+    model.add(Dense(
+        units=hp.Int('dense_units', min_value=10, max_value=100, step=1),
+        activation=hp.Choice('Dense_activation', values=['relu', 'tanh', 'sigmoid'])
+    ))
     model.add(Dense(X.shape[2]))
 
     # Inclure l'optimizer comme hyperparamètre
