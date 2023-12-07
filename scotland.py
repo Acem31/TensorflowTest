@@ -1,11 +1,15 @@
 import pandas as pd
 import numpy as np
+import tensorflow as tf
+from tensorflow.keras.losses import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Concatenate
 from kerastuner.tuners import BayesianOptimization
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.models import Model
+from tensorflow.keras.callbacks import ReduceLROnPlateau
 
 # Charger les données
 data = pd.read_csv('euromillions.csv', sep=';', header=None)
@@ -21,7 +25,7 @@ sequences = scaler.fit_transform(sequences)
 
 # Préparer les données pour l'apprentissage
 X, y = [], []
-sequence_length = 2
+sequence_length = 7
 
 for i in range(len(sequences) - sequence_length):
     X.append(sequences[i:i+sequence_length])
@@ -34,16 +38,32 @@ y = np.array(y)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=1e-6)
+callbacks = [early_stopping, reduce_lr]
+
+def custom_loss(y_true, y_pred):
+    # Split y_pred into mean and std
+    mean_pred = y_pred[:, :X.shape[2]]
+    std_pred = y_pred[:, X.shape[2]:]
+
+    # Use mean_squared_error for the mean part
+    mean_loss = mean_squared_error(y_true, mean_pred)
+
+    # Calculate the loss for the std part (you may use a different loss here)
+    std_loss = tf.reduce_mean(tf.square(std_pred - tf.math.reduce_std(y_true, axis=1, keepdims=True)))
+
+    # Return the combined loss
+    return mean_loss + std_loss
 
 def build_hyper_model(hp):
     model = Sequential()
     model.add(LSTM(
-        units=hp.Int('units', min_value=10, max_value=100, step=1),
+        units=hp.Int('units', min_value=10, max_value=1024, step=1),
         activation=hp.Choice('lstm_activation', values=['relu', 'tanh', 'sigmoid']),
         input_shape=(sequence_length, X.shape[2])
     ))
     model.add(Dense(
-        units=hp.Int('dense_units', min_value=10, max_value=100, step=1),
+        units=hp.Int('dense_units', min_value=10, max_value=1024, step=1),
         activation=hp.Choice('Dense_activation', values=['relu', 'tanh', 'sigmoid'])
     ))
     
@@ -60,7 +80,7 @@ def build_hyper_model(hp):
     model = Model(inputs=model.input, outputs=final_output)
     optimizer_choice = hp.Choice('optimizer', values=['adam', 'sgd', 'rmsprop'])
     optimizer = 'adam' if optimizer_choice == 'adam' else ('sgd' if optimizer_choice == 'sgd' else 'rmsprop')
-    model.compile(optimizer=optimizer, loss='mse')
+    model.compile(optimizer=optimizer, loss=custom_loss)
     return model
 
 # Initialiser le tuner BayesianOptimization
@@ -74,7 +94,7 @@ tuner = BayesianOptimization(
 )
 
 # Rechercher les meilleurs hyperparamètres
-tuner.search(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test), callbacks=[early_stopping])
+tuner.search(X_train, y_train, epochs=150, batch_size=64, validation_data=(X_test, y_test), callbacks=callbacks)
 
 # Récupérer le modèle avec les meilleurs hyperparamètres
 best_model = tuner.get_best_models(num_models=1)[0]
