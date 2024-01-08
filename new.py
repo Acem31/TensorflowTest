@@ -1,94 +1,60 @@
-import pandas as pd
+import subprocess
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
-from kerastuner.tuners import BayesianOptimization
-from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.callbacks import EarlyStopping
 
-# Charger les données
-data = pd.read_csv('euromillions.csv', sep=';', header=None)
+# Fonction pour compter les occurrences
+def count_occurrences(target, predictions):
+    count = 0
+    for prediction in predictions:
+        if np.array_equal(prediction, target):
+            count += 1
+    return count
 
-# Prétraitement des données
-main_numbers = data.iloc[:, 0:6]
-bonus_numbers = data.iloc[:, 6:8]
-sequences = pd.concat([main_numbers, bonus_numbers], axis=1)
+# Fonction pour afficher le tableau résumant les occurrences
+def print_occurrences_table(occurrences):
+    print("Occurrences:")
+    print("-------------")
+    print("0 corrects: ", occurrences[0])
+    print("1 correct: ", occurrences[1])
+    print("2 corrects: ", occurrences[2])
+    print("3 corrects: ", occurrences[3])
+    print("4 corrects: ", occurrences[4])
+    print("5 corrects: ", occurrences[5])
+    print("6 corrects: ", occurrences[6])
+    print("7 corrects: ", occurrences[7])
 
-# Normaliser les données
-scaler = MinMaxScaler()
-sequences = scaler.fit_transform(sequences)
+# Fonction principale
+def main():
+    # Initialiser le tableau des occurrences
+    occurrences = {i: 0 for i in range(8)}
 
-# Préparer les données pour l'apprentissage
-X, y = [], []
-sequence_length = 2
+    # Nombre maximal d'itérations
+    max_iterations = 1000
+    iteration = 0
 
-for i in range(len(sequences) - sequence_length):
-    X.append(sequences[i:i+sequence_length])
-    y.append(sequences[i+sequence_length])
+    while iteration < max_iterations:
+        # Lancer le script scotland.py
+        result = subprocess.run(["python3.10", "scotland.py"], capture_output=True, text=True)
 
-X = np.array(X)
-y = np.array(y)
+        # Extraire les numéros prédits
+        predicted_numbers_rounded = eval(result.stdout)
 
-# Diviser les données en ensemble d'entraînement et ensemble de test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        # Résultat cible
+        target_result = np.array([4, 7, 18, 39, 50, 3, 8])
 
-early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+        # Compter les occurrences
+        correct_numbers = count_occurrences(target_result, predicted_numbers_rounded)
+        occurrences[correct_numbers] += 1
 
-def build_hyper_model(hp):
-    model = Sequential()
-    model.add(LSTM(
-        units=hp.Int('units', min_value=10, max_value=100, step=1),
-        activation=hp.Choice('lstm_activation', values=['relu', 'tanh', 'sigmoid']),
-        input_shape=(sequence_length, X.shape[2])
-    ))
-    model.add(Dense(
-        units=hp.Int('dense_units', min_value=10, max_value=100, step=1),
-        activation=hp.Choice('Dense_activation', values=['relu', 'tanh', 'sigmoid'])
-    ))
-    model.add(Dense(X.shape[2]))
+        # Afficher le tableau des occurrences
+        print_occurrences_table(occurrences)
 
-    # Inclure l'optimizer comme hyperparamètre
-    optimizer_choice = hp.Choice('optimizer', values=['adam', 'sgd', 'rmsprop'])
-    
-    # Initialiser optimizer avec une valeur par défaut (par exemple, 'adam')
-    optimizer = 'adam'
+        # Vérifier si les numéros prédits sont corrects
+        if correct_numbers == 7:
+            print("Le résultat cible a été atteint! Arrêt du programme.")
+            break
 
-    if optimizer_choice == 'sgd':
-        optimizer = 'sgd'
-    elif optimizer_choice == 'rmsprop':
-        optimizer = 'rmsprop'
-    
-    model.compile(optimizer=optimizer, loss='mse')
-    return model
+        iteration += 1
 
-# Initialiser le tuner BayesianOptimization
-tuner = BayesianOptimization(
-    build_hyper_model,
-    objective='val_loss',
-    num_initial_points=10,
-    alpha=1e-4,
-    beta=2.6,
-    max_trials=100
-)
-
-# Rechercher les meilleurs hyperparamètres
-tuner.search(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test), callbacks=[early_stopping])
-
-# Récupérer le modèle avec les meilleurs hyperparamètres
-best_model = tuner.get_best_models(num_models=1)[0]
-
-# Évaluer le modèle sur l'ensemble de test
-loss = best_model.evaluate(X_test, y_test)
-print(f"Loss on test set: {loss}")
-
-# Faire une prédiction pour le prochain tirage
-last_sequence = sequences[-sequence_length:].reshape(1, sequence_length, X.shape[2])
-predicted_numbers = best_model.predict(last_sequence)
-
-# Inverser la normalisation pour obtenir les numéros prédits
-predicted_numbers = scaler.inverse_transform(predicted_numbers)
-
-print("Numéros prédits pour le prochain tirage:")
-print(predicted_numbers)
+# Exécuter le programme principal
+if __name__ == "__main__":
+    main()
