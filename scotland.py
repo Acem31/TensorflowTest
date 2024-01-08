@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import LSTM, Dense, Input, Concatenate
+from tensorflow.keras.optimizers import SGD, RMSprop, Adam, AdamW, Adadelta, Adagrad, Adamax, Adafactor, Nadam, Ftrl
 from keras_tuner.tuners import BayesianOptimization
 from mlxtend.frequent_patterns import apriori
 from mlxtend.preprocessing import TransactionEncoder
@@ -42,25 +43,32 @@ def custom_loss(y_true, y_pred):
     mean_pred = y_pred[:, :X.shape[2]]
     std_pred = y_pred[:, X.shape[2]:]
 
+    if mean_pred.shape != (None, 7):
+        raise ValueError("Invalid shape for mean prediction. Expected (1, 7).")
+
     # Use mean_squared_error for the mean part
     mean_loss = mean_squared_error(y_true, mean_pred)
 
     # Calculate the loss for the std part (you may use a different loss here)
     std_loss = tf.reduce_mean(tf.square(std_pred - tf.math.reduce_std(y_true, axis=1, keepdims=True)))
 
+    if tf.reduce_any(tf.math.is_nan(mean_loss)) or tf.reduce_any(tf.math.is_nan(std_loss)):
+    # Return a very high loss to indicate that this configuration is not valid
+        return 1e6
+    else:
     # Return the combined loss
-    return mean_loss + std_loss
+        return mean_loss + std_loss
 
 def build_hyper_model(hp):
     model = Sequential()
     model.add(LSTM(
         units=hp.Int('units', min_value=7, max_value=700, step=1),
-        activation=hp.Choice('lstm_activation', values=['relu', 'tanh', 'sigmoid']),
+        activation=hp.Choice('lstm_activation', values=['softmax', 'softplus', 'softsign', 'tanh', 'selu', 'elu', 'exponential', 'leaky_relu', 'relu6', 'silu', 'gelu', 'hard_sigmoid', 'linear', 'mish', 'log_softmax']),
         input_shape=(sequence_length, X.shape[2])
     ))
     model.add(Dense(
         units=hp.Int('dense_units', min_value=7, max_value=700, step=1),
-        activation=hp.Choice('Dense_activation', values=['relu', 'tanh', 'sigmoid'])
+        activation=hp.Choice('Dense_activation', values=['softmax', 'softplus', 'softsign', 'tanh', 'selu', 'elu', 'exponential', 'leaky_relu', 'relu6', 'silu', 'gelu', 'hard_sigmoid', 'linear', 'mish', 'log_softmax'])
     ))
 
     # Sortie pour la valeur moyenne
@@ -74,8 +82,28 @@ def build_hyper_model(hp):
 
     # Compiler le modèle
     model = Model(inputs=model.input, outputs=final_output)
-    optimizer_choice = hp.Choice('optimizer', values=['adam', 'sgd', 'rmsprop'])
-    optimizer = 'adam' if optimizer_choice == 'adam' else ('sgd' if optimizer_choice == 'sgd' else 'rmsprop')
+    optimizer_choice = hp.Choice('optimizer', values=['SGD', 'RMSprop', 'Adam', 'AdamW', 'Adadelta', 'Adagrad', 'Adamax', 'Adafactor', 'Nadam', 'Ftrl'])
+    
+    if optimizer_choice == 'SGD':
+        optimizer = SGD(learning_rate=hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='log'))
+    elif optimizer_choice == 'RMSprop':
+        optimizer = RMSprop(learning_rate=hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='log'))
+    elif optimizer_choice == 'Adam':
+        optimizer = Adam(learning_rate=hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='log'))
+    elif optimizer_choice == 'AdamW':
+        optimizer = AdamW(learning_rate=hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='log'))
+    elif optimizer_choice == 'Adadelta':
+        optimizer = Adadelta(learning_rate=hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='log'))
+    elif optimizer_choice == 'Adagrad':
+        optimizer = Adagrad(learning_rate=hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='log'))
+    elif optimizer_choice == 'Adamax':
+        optimizer = Adamax(learning_rate=hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='log'))
+    elif optimizer_choice == 'Adafactor':
+        optimizer = Adafactor(learning_rate=hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='log'))
+    elif optimizer_choice == 'Nadam':
+        optimizer = Nadam(learning_rate=hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='log'))
+    elif optimizer_choice == 'Ftrl':
+        optimizer = Ftrl(learning_rate=hp.Float('learning_rate', min_value=1e-4, max_value=1e-2, sampling='log'))
     model.compile(optimizer=optimizer, loss=custom_loss)
     return model
 
