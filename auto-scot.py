@@ -127,7 +127,8 @@ tuner = BayesianOptimization(
     num_initial_points=10,
     alpha=1e-4,
     beta=2.6,
-    max_trials=200
+    max_trials=100,
+    project_name='auto-scot'
 )
 
 # Rechercher les meilleurs hyperparamètres
