@@ -5,9 +5,11 @@ from tensorflow.keras.losses import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tensorflow.keras.models import Sequential, Model
-from tensorflow.keras.layers import LSTM, Dense, Input, Concatenate
+from tensorflow.keras.layers import LSTM, Dense, Input, Concatenate, Dropout
 from tensorflow.keras.optimizers import SGD, RMSprop, Adam, AdamW, Adadelta, Adagrad, Adamax, Adafactor, Nadam, Ftrl
 from keras_tuner.tuners import BayesianOptimization
+from tensorflow.keras.layers import Bidirectional
+from tensorflow.keras.layers import BatchNormalization
 from mlxtend.frequent_patterns import apriori
 from mlxtend.preprocessing import TransactionEncoder
 from tensorflow.keras.callbacks import EarlyStopping
@@ -60,41 +62,53 @@ def custom_loss(y_true, y_pred):
         return mean_loss + std_loss
 
 def build_hyper_model(hp):
-    model = Sequential()
-    model.add(LSTM(
-        units=hp.Int('units', min_value=7, max_value=700, step=1),
-        activation=hp.Choice('lstm_activation', values=['softmax', 'softplus', 'softsign', 'tanh', 'selu', 'elu', 'exponential', 'leaky_relu', 'relu6', 'silu', 'gelu', 'hard_sigmoid', 'linear', 'mish', 'log_softmax']),
-        input_shape=(sequence_length, X.shape[2])
-    ))
-    # Ajouter la première couche Dense supplémentaire
-    model.add(Dense(
+    input_layer = Input(shape=(sequence_length, X.shape[2]))
+
+    # Ajouter une première couche LSTM bidirectionnelle
+    lstm_output = Bidirectional(LSTM(
+        units=hp.Int('units_lstm_1', min_value=7, max_value=700, step=1),
+        activation=hp.Choice('lstm_activation_1', values=['softmax', 'softplus', 'softsign', 'tanh', 'selu', 'elu', 'exponential', 'leaky_relu', 'relu6', 'silu', 'gelu', 'hard_sigmoid', 'linear', 'mish', 'log_softmax']),
+        return_sequences=True,
+        kernel_initializer=hp.Choice('kernel_initializer_1', values=['glorot_uniform', 'orthogonal', 'he_normal', 'lecun_normal']),
+        recurrent_initializer=hp.Choice('recurrent_initializer_1', values=['orthogonal', 'he_normal', 'lecun_normal']),
+        bias_initializer=hp.Choice('bias_initializer_1', values=['zeros', 'ones', 'random_normal', 'random_uniform'])
+    ))(input_layer)
+
+    # Ajouter une première couche Dense
+    dense_output = Dense(
         units=hp.Int('dense_units_1', min_value=7, max_value=700, step=1),
-        activation=hp.Choice('Dense_activation_1', values=['softmax', 'softplus', 'softsign', 'tanh', 'selu', 'elu', 'exponential', 'leaky_relu', 'relu6', 'silu', 'gelu', 'hard_sigmoid', 'linear', 'mish', 'log_softmax'])
-    ))
+        activation=hp.Choice('dense_activation_1', values=['softmax', 'softplus', 'softsign', 'tanh', 'selu', 'elu', 'exponential', 'leaky_relu', 'relu6', 'silu', 'gelu', 'hard_sigmoid', 'linear', 'mish', 'log_softmax'])
+    )(lstm_output)
 
-    # Ajouter la deuxième couche Dense supplémentaire
-    model.add(Dense(
-        units=hp.Int('dense_units_2', min_value=7, max_value=700, step=1),
-        activation=hp.Choice('Dense_activation_2', values=['softmax', 'softplus', 'softsign', 'tanh', 'selu', 'elu', 'exponential', 'leaky_relu', 'relu6', 'silu', 'gelu', 'hard_sigmoid', 'linear', 'mish', 'log_softmax'])
-    ))
+    # Ajouter les couches LSTM bidirectionnelles et Dense en alternance
+    for i in range(2, 8):
+        # Ajouter une couche LSTM bidirectionnelle
+        lstm_output = Bidirectional(LSTM(
+            units=hp.Int(f'units_lstm_{i}', min_value=7, max_value=700, step=1),
+            activation=hp.Choice(f'lstm_activation_{i}', values=['softmax', 'softplus', 'softsign', 'tanh', 'selu', 'elu', 'exponential', 'leaky_relu', 'relu6', 'silu', 'gelu', 'hard_sigmoid', 'linear', 'mish', 'log_softmax']),
+            return_sequences=True if i < 7 else False,
+            kernel_initializer=hp.Choice('kernel_initializer_1', values=['glorot_uniform', 'orthogonal', 'he_normal', 'lecun_normal']),
+            recurrent_initializer=hp.Choice('recurrent_initializer_1', values=['orthogonal', 'he_normal', 'lecun_normal']),
+            bias_initializer=hp.Choice('bias_initializer_1', values=['zeros', 'ones', 'random_normal', 'random_uniform'])
+        ))(lstm_output)
 
-    # Couche Dense originale (valeur moyenne)
-    model.add(Dense(
-        units=hp.Int('dense_units', min_value=7, max_value=700, step=1),
-        activation=hp.Choice('Dense_activation', values=['softmax', 'softplus', 'softsign', 'tanh', 'selu', 'elu', 'exponential', 'leaky_relu', 'relu6', 'silu', 'gelu', 'hard_sigmoid', 'linear', 'mish', 'log_softmax'])
-    ))
+        # Ajouter une couche Dense
+        dense_output = Dense(
+            units=hp.Int(f'dense_units_{i}', min_value=7, max_value=700, step=1),
+            activation=hp.Choice(f'dense_activation_{i}', values=['softmax', 'softplus', 'softsign', 'tanh', 'selu', 'elu', 'exponential', 'leaky_relu', 'relu6', 'silu', 'gelu', 'hard_sigmoid', 'linear', 'mish', 'log_softmax'])
+        )(lstm_output)
 
     # Sortie pour la valeur moyenne
-    mean_output = Dense(X.shape[2], name='mean_output')(model.layers[-1].output)
+    mean_output = Dense(X.shape[2], name='mean_output')(dense_output)
 
     # Sortie pour l'écart-type (activation softplus pour des valeurs positives)
-    std_output = Dense(X.shape[2], activation='softplus', name='std_output')(model.layers[-1].output)
+    std_output = Dense(X.shape[2], activation='softplus', name='std_output')(dense_output)
 
     # Concaténer les deux sorties
     final_output = Concatenate(name='final_output')([mean_output, std_output])
 
     # Compiler le modèle
-    model = Model(inputs=model.input, outputs=final_output)
+    model = Model(inputs=input_layer, outputs=final_output)
     optimizer_choice = hp.Choice('optimizer', values=['SGD', 'RMSprop', 'Adam', 'AdamW', 'Adadelta', 'Adagrad', 'Adamax', 'Adafactor', 'Nadam', 'Ftrl'])
     
     if optimizer_choice == 'SGD':
@@ -120,6 +134,7 @@ def build_hyper_model(hp):
     model.compile(optimizer=optimizer, loss=custom_loss)
     return model
 
+
 # Initialiser le tuner BayesianOptimization
 tuner = BayesianOptimization(
     build_hyper_model,
@@ -127,12 +142,12 @@ tuner = BayesianOptimization(
     num_initial_points=10,
     alpha=1e-4,
     beta=2.6,
-    max_trials=100,
+    max_trials=40,
     project_name='auto-scot'
 )
 
 # Rechercher les meilleurs hyperparamètres
-tuner.search(X_train, y_train, epochs=200, batch_size=32, validation_data=(X_test, y_test), callbacks=[early_stopping])
+tuner.search(X_train, y_train, epochs=200, batch_size=7, validation_data=(X_test, y_test), callbacks=[early_stopping])
 
 # Récupérer le modèle avec les meilleurs hyperparamètres
 best_model = tuner.get_best_models(num_models=1)[0]
@@ -150,7 +165,9 @@ predicted_mean = predicted_values[:, :X.shape[2]]
 predicted_std = predicted_values[:, X.shape[2]:]
 
 # Ajouter l'écart-type aux prédictions de la valeur moyenne
-predicted_numbers = predicted_mean + predicted_std * np.random.normal(size=predicted_mean.shape)
+# Exemple avec une distribution de Laplace
+other_samples = np.random.pareto(5, size=predicted_std.shape) * 0.65
+predicted_numbers = predicted_mean + predicted_std * other_samples
 
 # Inverser la normalisation pour obtenir les numéros prédits
 predicted_numbers = scaler.inverse_transform(predicted_numbers)
