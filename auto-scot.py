@@ -28,7 +28,7 @@ sequences = scaler.fit_transform(sequences)
 
 # Préparer les données pour l'apprentissage
 X, y = [], []
-sequence_length = 7
+sequence_length = 1
 
 for i in range(len(sequences) - sequence_length):
     X.append(sequences[i:i+sequence_length])
@@ -44,6 +44,8 @@ def custom_loss(y_true, y_pred):
     # Split y_pred into mean and std
     mean_pred = y_pred[:, :X.shape[2]]
     std_pred = y_pred[:, X.shape[2]:]
+
+    print(f"X shape: {X.shape}")  # Ajout de cette ligne pour le débogage
 
     if mean_pred.shape != (None, 7):
         raise ValueError("Invalid shape for mean prediction. Expected (1, 7).")
@@ -166,7 +168,7 @@ predicted_std = predicted_values[:, X.shape[2]:]
 
 # Ajouter l'écart-type aux prédictions de la valeur moyenne
 # Exemple avec une distribution de Laplace
-other_samples = np.random.pareto(5, size=predicted_std.shape) * 0.65
+other_samples = np.random.noncentral_f(20, 50, nonc=2.0, size=predicted_std.shape)
 predicted_numbers = predicted_mean + predicted_std * other_samples
 
 # Inverser la normalisation pour obtenir les numéros prédits
