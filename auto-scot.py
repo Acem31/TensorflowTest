@@ -149,7 +149,7 @@ tuner = BayesianOptimization(
 )
 
 # Rechercher les meilleurs hyperparamètres
-tuner.search(X_train, y_train, epochs=200, batch_size=7, validation_data=(X_test, y_test), callbacks=[early_stopping])
+tuner.search(X_train, y_train, epochs=200, batch_size=35, validation_data=(X_test, y_test), callbacks=[early_stopping])
 
 # Récupérer le modèle avec les meilleurs hyperparamètres
 best_model = tuner.get_best_models(num_models=1)[0]
