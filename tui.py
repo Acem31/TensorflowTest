@@ -1,182 +1,52 @@
-import curses
 import subprocess
-import os
-import pty
-import signal
-import csv
-import threading
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-import sys
 
-def signal_handler(sig, frame):
-    curses.endwin()  # Restaurer l'état du terminal
-    sys.exit(0)
+# Résultat cible
+target_result = [14, 23, 39, 48, 50, 3, 12]
 
-# Définir le gestionnaire de signal pour SIGINT (Ctrl+C)
-signal.signal(signal.SIGINT, signal_handler)
+# Initialiser le tableau des occurrences
+occurrences = {i: 0 for i in range(8)}
 
-# Variable globale pour suivre l'état du programme
-program_running = False
-program_thread = None  # Référence au thread du programme
+# Nombre maximal d'itérations
+max_iterations = 1000
+iteration = 1
 
-# Hauteur du tableau
-table_height = 12
-# En-têtes de tableau par défaut
-table_headers = ["Epochs", "Batch Size", "Learning Rate", "Regularization", "Accuracy", "Precision"]
+while occurrences[7] == 0 and iteration < max_iterations:
+    # Lancer le script scotland.py
+    result = subprocess.run(["python3.10", "auto-scot.py"], capture_output=True, text=True)
 
-def update_table(table, data):
-    # Effacer le contenu actuel du tableau
-    table.clear()
+    # Extraire la chaîne représentant les numéros prédits
+    output_lines = result.stdout.strip().split('\n')
+    predicted_str = output_lines[-1].split(': ')[-1]
 
-    # Afficher les en-têtes du tableau
-    for i, col_name in enumerate(table_headers):
-        table.addstr(i * 2, 1, col_name, curses.color_pair(2))
+    # Convertir la chaîne en une liste
+    predicted_numbers_rounded = list(map(float, predicted_str.strip('[[]]').split()))
 
-    # Mettez à jour le tableau avec les données
-    for i, row_data in enumerate(data):
-        table.addstr(i * 2 + 1, 1, row_data, curses.color_pair(2))
+    # Séparer les numéros prédits
+    predicted_numbers_first_part = predicted_numbers_rounded[:5]
+    predicted_numbers_second_part = predicted_numbers_rounded[5:]
 
-    table.refresh()
+    # Comparaison des 5 premiers numéros
+    common_elements_first_part = set(target_result[:5]) & set(predicted_numbers_first_part)
 
-# Créez une classe de gestionnaire d'événements pour surveiller le fichier CSV
-class CSVHandler(FileSystemEventHandler):
-    def __init__(self, table):
-        super().__init__()
-        self.table = table
+    # Comparaison des 2 derniers numéros
+    common_elements_second_part = set(target_result[5:]) & set(predicted_numbers_second_part)
 
-    def on_modified(self, event):
-        if event.src_path == 'results.csv':
-            # Charger les données actuelles du fichier CSV
-            with open('results.csv', newline='') as csvfile:
-                csv_reader = csv.reader(csvfile)
-                data = list(csv_reader)
-                if data:
-                    row = data[-1]  # Récupérer les données depuis la dernière ligne
-                else:
-                    row = ["0"] * len(table_headers)  # Remplacer les données vides par des zéros
-                update_table(self.table, row)
+    # Ajouter les occurrences aux totaux
+    occurrences[len(common_elements_first_part) + len(common_elements_second_part)] += 1
 
-def start_program(right_win):
-    global program_running, program_thread
-    program_running = True
-    program_thread = threading.Thread(target=start_program_worker, args=(right_win,))
-    program_thread.start()
-    right_win.addstr(1, 2, "Lancement du programme...", curses.color_pair(2))
-    right_win.refresh()
-    # ...
+    # Afficher le tableau des occurrences avec pourcentage
+    print("\nOccurrences (itération", iteration, "):")
+    print("-------------")
+    for i in range(8):
+        percentage = (occurrences[i] / iteration) * 100 if iteration > 0 else 0
+        print(f"{i} corrects: {occurrences[i]} ({percentage:.2f}%)")
 
-def start_program_worker(right_win):
-    max_y, max_x = right_win.getmaxyx()
-    master, slave = pty.openpty()
-    cmd = ["python3.10", "reinf_tuples.py"]
-    process = subprocess.Popen(
-        cmd, stdout=slave, stderr=slave, preexec_fn=lambda: curses.resizeterm(max_y, curses.COLS // 3)
-    )
+    # Incrémenter le nombre d'itérations
+    iteration += 1
 
-    first_line = True
-    lines = []
-    while True:
-        try:
-            output = os.read(master, 1024).decode("utf-8")
-            if not output:
-                break
-            if first_line:
-                right_win.addstr(1, 2, " " * (curses.COLS // 3 - 4), curses.color_pair(2))
-                first_line = False
-            lines.append(output)
-            if len(lines) > max_y - 8:
-                lines.pop(0)
-            right_win.clear()
-            for i, line in enumerate(lines):
-                right_win.addstr(2 + i, 2, line.strip(), curses.color_pair(2))
-            right_win.refresh()
-        except OSError:
-            break
-
-    process.wait()
-    program_running = False
-    
-# Fonction pour arrêter le programme
-def stop_program():
-    global program_running, program_thread
-    if program_running and program_thread is not None:
-        program_thread.join()  # Attendez que le thread du programme se termine
-        program_thread = None
-        program_running = False
-
-# Fonction pour afficher la fenêtre TUI
-def create_tui_window(stdscr):
-    global program_running, program_thread
-
-    def run_program():
-        if not program_running:
-            # Démarrer le programme dans un thread
-            program_thread = threading.Thread(target=start_program, args=(right_win,))
-            program_thread.start()
-            text_centered = "État du programme: En cours d'exécution"
-            left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
-            left_win.refresh()
-
-    curses.curs_set(0)
-    stdscr.clear()
-    stdscr.keypad(1)
-
-    curses.start_color()
-    curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLUE)
-    curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLACK)
-
-    left_win = stdscr.subwin(curses.LINES, curses.COLS // 3 - 2, 0, 0)
-    left_win.bkgd(' ', curses.color_pair(1))
-    left_win.box()
-
-    # Ajouter du texte centré avec fond bleu
-    text_centered = "Appuyez sur F pour lancer le programme"
-    left_win.addstr(1, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
-
-    # Ajouter du texte centré avec fond bleu et blanc
-    text_centered = "État du programme: En attente"
-    left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
-
-    # Modifier la couleur du texte "Appuyez sur C pour arrêter le programme" et centrer
-    text_centered = "Appuyez sur C pour arrêter le programme"
-    left_win.addstr(3, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
-
-    right_win = stdscr.subwin(curses.LINES, 2 * (curses.COLS // 3 - 2), 0, curses.COLS // 3 + 2)
-    right_win.bkgd(' ', curses.color_pair(2))
-    right_win.box()
-
-    # Créer un tableau initial avec les en-têtes
-    table_width = curses.COLS // 3 - 6
-    table_start_y = curses.LINES - table_height - 2
-    table_start_x = 3
-    table = left_win.subwin(table_height, table_width, table_start_y, table_start_x)
-
-    # Créer un observateur watchdog pour surveiller les modifications du fichier CSV
-    observer = Observer()
-    observer.schedule(CSVHandler(table), path='.', recursive=False)
-    observer.start()
-
-    stdscr.refresh()
-    left_win.refresh()
-    right_win.refresh()
-
-    while True:
-        key = stdscr.getch()
-        if key == ord('F') or key == ord('f'):
-            run_program()
-        elif key == ord('C') or key == ord('c'):
-            stop_program()
-            text_centered = "État du programme: Arrêté"
-            left_win.addstr(2, (curses.COLS // 3 - len(text_centered)) // 2, text_centered, curses.color_pair(1))
-            left_win.refresh()
-        elif key == curses.KEY_F4:  # Appuyez sur F4 pour quitter TUI
-            if program_running:
-                stop_program()  # Arrêtez le programme avant de quitter le TUI
-            break
-
-    stdscr.keypad(0)
-    curses.endwin()
-
-if __name__ == "__main__":
-    curses.wrapper(create_tui_window)
+# Afficher le tableau des occurrences final avec pourcentage
+print("\nOccurrences finales:")
+print("-------------")
+for i in range(8):
+    percentage = (occurrences[i] / iteration) * 100 if iteration > 0 else 0
+    print(f"{i} corrects: {occurrences[i]} ({percentage:.2f}%)")
